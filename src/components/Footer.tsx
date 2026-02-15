@@ -234,7 +234,7 @@ const Footer = () => {
                   <iframe
                     width="380"
                     height="38"
-                    style={{ border: 0,background: "transparent" }}
+                    style={{ border: 0,background: "transparent",borderRadius:'9px' }}
                     src="https://climate.stripe.com/badge/rcvWYp?theme=dark&size=small&locale=en-US"
                     title="Stripe Climate Badge"
                     loading="lazy"
