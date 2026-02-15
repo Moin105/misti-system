@@ -7,8 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageCircle, Mail } from "lucide-react";
 import { DynamicIcon, getIconByName } from "@/components/DynamicIcon";
-import discordHeroImage from "@/assets/discord-hero.jpg";
-import contactBgImage from "@/assets/contact-bg.jpg";
+import discordHeroImageSrc from "@/assets/discord-hero.jpg";
+import contactBgImageSrc from "@/assets/contact-bg.jpg";
+
+// Ensure images are string URLs
+const discordHeroImage = typeof discordHeroImageSrc === 'string' ? discordHeroImageSrc : (discordHeroImageSrc as any)?.default || (discordHeroImageSrc as any)?.src || String(discordHeroImageSrc);
+const contactBgImage = typeof contactBgImageSrc === 'string' ? contactBgImageSrc : (contactBgImageSrc as any)?.default || (contactBgImageSrc as any)?.src || String(contactBgImageSrc);
 import { signalPrerenderReady } from "@/lib/prerender";
 
 interface ContentBlock {

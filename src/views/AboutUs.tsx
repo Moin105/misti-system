@@ -5,8 +5,12 @@ import Footer from "@/components/LazyFooter";
 import SEO from "@/components/SEO";
 import { Shield, Zap, Users, Clock, LucideIcon, Building2, MapPin } from "lucide-react";
 import * as LucideIcons from "lucide-react";
-import aboutHeroImage from "@/assets/about-hero.jpg";
-import aboutTeamImage from "@/assets/about-team.jpg";
+import aboutHeroImageSrc from "@/assets/about-hero.jpg";
+import aboutTeamImageSrc from "@/assets/about-team.jpg";
+
+// Ensure images are string URLs
+const aboutHeroImage = typeof aboutHeroImageSrc === 'string' ? aboutHeroImageSrc : (aboutHeroImageSrc as any)?.default || (aboutHeroImageSrc as any)?.src || String(aboutHeroImageSrc);
+const aboutTeamImage = typeof aboutTeamImageSrc === 'string' ? aboutTeamImageSrc : (aboutTeamImageSrc as any)?.default || (aboutTeamImageSrc as any)?.src || String(aboutTeamImageSrc);
 import { sanitizeHtml } from "@/lib/sanitize";
 import { signalPrerenderReady } from "@/lib/prerender";
 import { useLazyLoad } from "@/hooks/useLazyLoad";

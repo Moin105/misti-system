@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import { Lock, ShieldCheck, BadgeCheck } from "lucide-react";
 import { useCookieConsent } from "@/contexts/CookieConsentContext";
 import { useDeferredFooterData } from "@/hooks/useDeferredFooterData";
-import mistiLogo from "@/assets/misti-logo.png";
+import mistiLogoSrc from "@/assets/misti-logo.png";
+
+// Ensure logo is a string URL
+const mistiLogo = typeof mistiLogoSrc === 'string' ? mistiLogoSrc : (mistiLogoSrc as any)?.default || (mistiLogoSrc as any)?.src || String(mistiLogoSrc);
 import { DynamicIcon } from "@/components/DynamicIcon";
 
 // Trustpilot global type declaration

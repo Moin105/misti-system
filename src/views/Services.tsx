@@ -13,7 +13,10 @@ import { Card } from "@/components/ui/card";
 import { ContactSupportDropdown } from "@/components/ContactSupportDropdown";
 import { Headphones, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroBg from "@/assets/hero-bg.jpg";
+import heroBgSrc from "@/assets/hero-bg.jpg";
+
+// Ensure heroBg is a string URL
+const heroBg = typeof heroBgSrc === 'string' ? heroBgSrc : (heroBgSrc as any)?.default || (heroBgSrc as any)?.src || String(heroBgSrc);
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useGameWithCategories, useProductsBySlug } from "@/hooks/useGameData";
 import { useGameFAQs } from "@/hooks/useGameFAQs";

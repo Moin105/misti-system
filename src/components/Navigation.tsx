@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { getOptimizedIconUrl } from "@/lib/imageOptimization";
 import { ShoppingCart, User, LogOut, Shield, Package, Trash2, Gift, TrendingUp, Gamepad2, ChevronDown, Search } from "lucide-react";
-import mistiLogo from "@/assets/misti-logo.png";
+import mistiLogoSrc from "@/assets/misti-logo.png";
+
+// Ensure logo is a string URL
+const mistiLogo = typeof mistiLogoSrc === 'string' ? mistiLogoSrc : (mistiLogoSrc as any)?.default || (mistiLogoSrc as any)?.src || String(mistiLogoSrc);
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Link, useNavigate } from "react-router-dom";
