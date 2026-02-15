@@ -60,24 +60,42 @@ const CurrencyManager = () => {
         body: {}
       });
 
+      // Check for error response
       if (error) {
         console.error('Edge function error:', error);
-        throw error;
+        throw new Error(error.message || 'Failed to invoke update function');
+      }
+
+      // Check if response indicates failure
+      if (data && !data.success) {
+        console.error('Function returned error:', data);
+        throw new Error(data.error || data.message || 'Failed to update exchange rates');
       }
 
       console.log('Function response:', data);
 
       toast({
         title: "Success",
-        description: "Exchange rates updated successfully",
+        description: data?.message || "Exchange rates updated successfully",
       });
       
       await fetchRates();
     } catch (error: any) {
       console.error('Update error:', error);
+      
+      // Extract error message from various error formats
+      let errorMessage = "Failed to update exchange rates";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.error) {
+        errorMessage = error.error;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to update exchange rates",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

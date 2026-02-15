@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Lock, ShieldCheck, BadgeCheck } from "lucide-react";
+import { Lock, ShieldCheck, BadgeCheck, Facebook, Instagram } from "lucide-react";
 import { useCookieConsent } from "@/contexts/CookieConsentContext";
 import { useDeferredFooterData } from "@/hooks/useDeferredFooterData";
 import mistiLogoSrc from "@/assets/misti-logo.png";
@@ -9,23 +9,17 @@ import mistiLogoSrc from "@/assets/misti-logo.png";
 const mistiLogo = typeof mistiLogoSrc === 'string' ? mistiLogoSrc : (mistiLogoSrc as any)?.default || (mistiLogoSrc as any)?.src || String(mistiLogoSrc);
 import { DynamicIcon } from "@/components/DynamicIcon";
 
-// Trustpilot global type declaration
-declare global {
-  interface Window {
-    Trustpilot?: {
-      loadFromElement: (element: HTMLElement | null) => void;
-    };
-  }
-}
+// Direct icon map for social icons to avoid async loading issues
+const socialIconMap: Record<string, React.ComponentType<any>> = {
+  'Facebook': Facebook,
+  'Instagram': Instagram,
+};
 
 const Footer = () => {
   const { openPreferences } = useCookieConsent();
   const [showStripeIframe, setShowStripeIframe] = useState(false);
-  const [showTrustpilot, setShowTrustpilot] = useState(false);
 
   const stripeRef = useRef<HTMLDivElement>(null);
-  const trustpilotContainerRef = useRef<HTMLDivElement>(null);
-  const trustpilotWidgetRef = useRef<HTMLDivElement>(null);
 
   const currentYear = new Date().getFullYear();
 
@@ -35,7 +29,7 @@ const Footer = () => {
   const sections = footerData?.sections || [];
   const socialLinks = footerData?.socialLinks || [];
 
-  // Lazy load Stripe iframe and Trustpilot widget when they come into view
+  // Lazy load Stripe iframe when it comes into view
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -45,66 +39,41 @@ const Footer = () => {
           if (entry.target === stripeRef.current) {
             setShowStripeIframe(true);
           }
-
-          if (entry.target === trustpilotContainerRef.current) {
-            setShowTrustpilot(true);
-          }
         });
       },
       { rootMargin: "100px" },
     );
 
     if (stripeRef.current) observer.observe(stripeRef.current);
-    if (trustpilotContainerRef.current) observer.observe(trustpilotContainerRef.current);
 
     return () => observer.disconnect();
   }, []);
 
-  // Load Trustpilot script when widget becomes visible
-  useEffect(() => {
-    if (!showTrustpilot) return;
-
-    const TRUSTPILOT_SCRIPT_ID = "trustpilot-bootstrap";
-    const TRUSTPILOT_SCRIPT_SRC = "https://widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js";
-
-    const tryInitialize = (attempt = 0) => {
-      const el = trustpilotWidgetRef.current;
-      if (window.Trustpilot && el) {
-        window.Trustpilot.loadFromElement(el);
-        return;
-      }
-
-      // Script/global may take a moment to attach; retry a few times.
-      if (attempt < 20) {
-        window.setTimeout(() => tryInitialize(attempt + 1), 250);
-      }
-    };
-
-    const existingScript = document.getElementById(TRUSTPILOT_SCRIPT_ID) as HTMLScriptElement | null;
-
-    if (!existingScript) {
-      const script = document.createElement("script");
-      script.id = TRUSTPILOT_SCRIPT_ID;
-      script.src = TRUSTPILOT_SCRIPT_SRC;
-      script.async = true;
-      script.onload = () => tryInitialize();
-      script.onerror = () => {
-        // If blocked by an extension, the fallback anchor text will remain.
-        console.warn("Trustpilot script failed to load (possibly blocked by an extension).");
-      };
-      document.body.appendChild(script);
-
-      // Also attempt init after render (covers fast-load cases).
-      tryInitialize();
-      return;
-    }
-
-    // Script already loaded (or loading)
-    tryInitialize();
-  }, [showTrustpilot]);
-
   const renderIcon = (iconName: string) => {
-    return <DynamicIcon name={iconName} className="w-5 h-5" />;
+    if (!iconName) return null;
+    
+    // Normalize icon name: capitalize first letter, lowercase rest
+    const normalizedName = iconName.charAt(0).toUpperCase() + iconName.slice(1).toLowerCase();
+    
+    // Map to correct icon names
+    const iconNameMap: Record<string, string> = {
+      'facebook': 'Facebook',
+      'instagram': 'Instagram',
+      'twitter': 'Twitter',
+      'youtube': 'Youtube',
+      'linkedin': 'Linkedin',
+      'discord': 'MessageCircle',
+    };
+    const finalName = iconNameMap[normalizedName.toLowerCase()] || normalizedName;
+    
+    // Try direct icon first (synchronous, no async loading)
+    const DirectIcon = socialIconMap[finalName];
+    if (DirectIcon) {
+      return <DirectIcon className="w-5 h-5 text-white" strokeWidth={2} />;
+    }
+    
+    // Fallback to DynamicIcon for other icons
+    return <DynamicIcon name={finalName} className="w-5 h-5 text-white" color="#ffffff" strokeWidth={2} />;
   };
 
   return (
@@ -155,20 +124,24 @@ const Footer = () => {
             </div>
             {socialLinks.length > 0 && (
               <div className="flex gap-4 mb-6">
-                {socialLinks.map((social) => (
-                  <a
-                    key={social.id}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 
-                               border border-white/10 flex items-center justify-center 
-                               hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]
-                               hover:scale-110 transition-all duration-300"
-                  >
-                    {renderIcon(social.icon_name)}
-                  </a>
-                ))}
+                {socialLinks.map((social) => {
+                  const icon = renderIcon(social.icon_name);
+                  return (
+                    <a
+                      key={social.id}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 
+                                 border border-white/10 flex items-center justify-center 
+                                 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]
+                                 hover:scale-110 transition-all duration-300 text-white"
+                      title={social.platform}
+                    >
+                      {icon || <span className="text-xs text-white">{social.platform.charAt(0)}</span>}
+                    </a>
+                  );
+                })}
               </div>
             )}
             <div className="text-sm text-muted-foreground space-y-1">
@@ -261,34 +234,23 @@ const Footer = () => {
                   <iframe
                     width="380"
                     height="38"
-                    style={{ border: 0 }}
+                    style={{ border: 0,background: "transparent" }}
                     src="https://climate.stripe.com/badge/rcvWYp?theme=dark&size=small&locale=en-US"
                     title="Stripe Climate Badge"
                     loading="lazy"
                   />
                 )}
               </div>
-              {/* Trustpilot Widget - Lazy Loaded */}
-              <div ref={trustpilotContainerRef} style={{ minHeight: 24, minWidth: 180 }}>
-                {showTrustpilot && (
-                  <div
-                    ref={trustpilotWidgetRef}
-                    className="trustpilot-widget"
-                    data-locale="en-US"
-                    data-template-id="5419b6a8b0d04a076446a9ad"
-                    data-businessunit-id="5b2e44d9a2dbb800012c86a0"
-                    data-style-height="24px"
-                    data-style-width="180px"
-                    data-token="252f7748-aaac-4e1d-ad0f-a164100e2d5d"
-                    data-min-review-count="0"
-                    data-style-alignment="center"
-                  >
-                    <a href="https://www.trustpilot.com/review/misti.services" target="_blank" rel="noopener noreferrer">
-                      Trustpilot
-                    </a>
-                  </div>
-                )}
-              </div>
+              {/* Trustpilot Link - Simple text link matching design */}
+              <a 
+                href="https://www.trustpilot.com/review/misti.services" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-base text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+                style={{ fontSize: '16px' }}
+              >
+                Trustpilot
+              </a>
             </div>
           </div>
           <div className="flex gap-3 items-center">
