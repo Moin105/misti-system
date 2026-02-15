@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "System can insert referral transactions" ON referral_transactions;

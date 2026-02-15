@@ -1,0 +1,53 @@
+# All assets with hashed filenames - cache for 1 year (immutable)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Root level static files
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+/*.ico
+  Cache-Control: public, max-age=31536000, immutable
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+# Service worker must NOT be cached immutably
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+  X-Content-Type-Options: nosniff
+
+# JavaScript files at root (like ~flock.js) - EXCLUDING sw.js handled above
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# HTML files - shorter cache, must revalidate
+/*.html
+  Cache-Control: public, max-age=3600, must-revalidate
+  X-Content-Type-Options: nosniff
+
+# Root HTML - no cache for SPA
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  X-Content-Type-Options: nosniff
+
+# Root path security headers only (cache control handled by specific rules above)
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.tawk.to https://*.tawk.to https://cdn.jsdelivr.net https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.ostr.io https://render.ostr.io https://*.doubleclick.net; style-src 'self' 'unsafe-inline' https://embed.tawk.to https://*.tawk.to https://cdn.jsdelivr.net; img-src 'self' data: https: blob:; font-src 'self' data: https://embed.tawk.to https://*.tawk.to https://cdn.jsdelivr.net https://fonts.gstatic.com; connect-src 'self' https://kdjlhibxxygfdmlvdfcl.supabase.co wss://kdjlhibxxygfdmlvdfcl.supabase.co https://*.supabase.co https://*.tawk.to wss://*.tawk.to https://va.tawk.to https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.merchant-center-analytics.goog https://*.ostr.io wss://*.ostr.io https://render.ostr.io https://www.google.com https://*.doubleclick.net https://*.googlesyndication.com; frame-src https://tawk.to https://*.tawk.to https://climate.stripe.com https://www.googletagmanager.com https://*.doubleclick.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+  Cross-Origin-Resource-Policy: same-origin

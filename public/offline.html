@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - misti.services</title>
+  <meta name="theme-color" content="#f97316">
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #0c1320 0%, #131b2e 50%, #0c1320 100%);
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 400px;
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 4px 12px rgba(249, 115, 22, 0.3));
+    }
+    
+    .icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+    
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    p {
+      color: #94a3b8;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    
+    .retry-btn {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+    }
+    
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
+    }
+    
+    .retry-btn:active {
+      transform: translateY(0);
+    }
+    
+    .tips {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    
+    .tips h3 {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .tips ul {
+      list-style: none;
+      text-align: left;
+      color: #94a3b8;
+      font-size: 0.875rem;
+    }
+    
+    .tips li {
+      padding: 6px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    .tips li::before {
+      content: "•";
+      color: #f97316;
+      position: absolute;
+      left: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="/favicon.png" alt="misti.services" class="logo">
+    
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="4" y1="4" x2="20" y2="20" stroke="#ef4444" stroke-width="2"/>
+    </svg>
+    
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection. Please check your connection and try again.</p>
+    
+    <button class="retry-btn" onclick="location.reload()">
+      Try Again
+    </button>
+    
+    <div class="tips">
+      <h3>Troubleshooting</h3>
+      <ul>
+        <li>Check your Wi-Fi or mobile data connection</li>
+        <li>Try switching between Wi-Fi and cellular</li>
+        <li>Move closer to your router</li>
+        <li>Restart your device if issues persist</li>
+      </ul>
+    </div>
+  </div>
+  
+  <script>
+    // Auto-retry when connection is restored
+    window.addEventListener('online', () => {
+      location.reload();
+    });
+  </script>
+</body>
+</html>

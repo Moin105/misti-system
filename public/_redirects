@@ -1,0 +1,23 @@
+# Redirect www -> non-www
+/*  https://misti.services/:splat  301!  Host:www.misti.services
+
+# Force HTTPS
+/* https://misti.services/:splat 301! Scheme:http
+
+# ============================================
+# GAME REDIRECTS
+# ============================================
+# WoW Classic 20th Anniversary -> WoW Classic Era
+/game/wow-classic-20th-anniversary    /game/wow-classic-era  301
+/game/wow-classic-20th-anniversary/   /game/wow-classic-era  301
+/game/wow-classic-20th-anniversary/*  /game/wow-classic-era/:splat  301
+
+# ============================================
+# ADD MORE REDIRECTS ABOVE THIS LINE
+# Use the "Export for Cloudflare" button in Admin -> Redirects
+# to generate redirect rules from the database
+# ============================================
+
+# SPA Fallback - MUST BE LAST
+# Note: 410 Gone and 404 responses are handled by Cloudflare Worker
+/* /index.html 200

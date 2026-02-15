@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="preconnect" href="https://kdjlhibxxygfdmlvdfcl.supabase.co" crossorigin="anonymous" />
+    <link rel="dns-prefetch" href="https://kdjlhibxxygfdmlvdfcl.supabase.co" />
+    <!-- Preload critical above-fold images -->
+    <link rel="preload" href="/src/assets/misti-logo.png" as="image" fetchpriority="high" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <!-- Non-critical third-party: dns-prefetch only (no preconnect) -->
+    <link rel="dns-prefetch" href="https://js.stripe.com" />
+    <link rel="dns-prefetch" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://embed.tawk.to" />
+    <link rel="dns-prefetch" href="https://widget.trustpilot.com" />
+
+    <!-- PWA - iOS meta tags MUST come before title for correct app name -->
+    <meta name="apple-mobile-web-app-title" content="Misti" />
+    <meta name="application-name" content="Misti" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Theme Color for PWA -->
+    <meta name="theme-color" content="#f97316" />
+    <meta name="msapplication-TileColor" content="#f97316" />
+
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Multiple iOS icon sizes for better compatibility -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon.png" />
+    <meta charset="UTF-8" />
+
+    <!-- Default SEO tags (will be replaced by React Helmet) -->
+    <title>WoW and MMO Boost Services | misti.services - Trusted Since 2013</title>
+    <meta
+      name="description"
+      content="Professional WoW, Path of Exile 2 &amp; Diablo IV boosting services. Fast power leveling, raid carries &amp; PvP boosts since 2013. Safe &amp; secure delivery."
+    />
+    <meta
+      name="keywords"
+      content="WoW boost, WoW boosting services, Path of Exile 2 boost, PoE 2 boost, Diablo IV boost, MMO boosting, power leveling services, raid carry, PvP boost, War Within boost"
+    />
+
+    <link rel="canonical" href="https://misti.services/" />
+
+    <meta
+      property="og:image"
+      content="https://storage.googleapis.com/gpt-engineer-file-uploads/dATtYjrZg8XQKUHNOV3bqcwDO6T2/social-images/social-1760973850614-favicon%20png.png"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://misti.services" />
+    <meta property="og:site_name" content="misti.services" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@mistiservices" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Inline critical CSS for immediate FCP -->
+    <style>
+      :root{--background:222 47% 7%;--foreground:210 40% 98%}
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{background:hsl(222 47% 7%);color:hsl(210 40% 98%);font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;-webkit-font-smoothing:antialiased}
+      #root{min-height:100vh}
+      #initial-loader{position:fixed;inset:0;background:hsl(222 47% 7%);display:flex;align-items:center;justify-content:center;z-index:9999}
+      #initial-loader>div{width:48px;height:48px;border:3px solid hsl(217 33% 17%);border-top-color:hsl(217 91% 60%);border-radius:50%;animation:spin 1s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      .nav-placeholder{height:64px;background:hsl(222 47% 7%)}
+      /* Critical navigation skeleton */
+      .nav-container{position:fixed;top:0;left:0;right:0;height:64px;background:hsl(220 35% 14%/80%);backdrop-filter:blur(12px);z-index:40}
+      /* Hero section critical layout */
+      .hero-section{padding-top:96px;padding-bottom:48px;min-height:400px}
+    </style>
+
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <meta name="author" content="misti.services" />
+
+    <!-- Prerender service signals - tells bots to wait for content -->
+    <script>
+      window.prerenderReady = false;
+      window.prerenderDone = false;
+      window.IS_RENDERED = false;  // ostr.io primary signal
+    </script>
+
+    <!-- Fragment meta for escaped_fragment support -->
+    <meta name="fragment" content="!" />
+
+    <!-- Google Analytics - deferred loading to reduce unused JS on initial load -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      function loadGA() {
+        if (window.gaLoaded) return;
+        window.gaLoaded = true;
+        var s = document.createElement('script');
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-DK9FJVGY7J';
+        s.async = true;
+        document.head.appendChild(s);
+        gtag('js', new Date());
+        gtag('config', 'G-DK9FJVGY7J', { page_path: window.location.pathname });
+      }
+      // Load GA after page is idle or on first user interaction
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadGA, { timeout: 3000 });
+      } else {
+        setTimeout(loadGA, 2000);
+      }
+      ['scroll', 'click', 'touchstart', 'keydown'].forEach(function(e) {
+        document.addEventListener(e, loadGA, { once: true, passive: true });
+      });
+    </script>
+
+    <!-- Google Tag Manager - deferred to reduce unused JS on initial load -->
+    <script>
+      function loadGTM() {
+        if (window.gtmLoaded) return;
+        window.gtmLoaded = true;
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-MZXRHMH2');
+      }
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadGTM, { timeout: 3500 });
+      } else {
+        setTimeout(loadGTM, 2500);
+      }
+      ['scroll', 'click', 'touchstart', 'keydown'].forEach(function(e) {
+        document.addEventListener(e, loadGTM, { once: true, passive: true });
+      });
+    </script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Security Headers -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.tawk.to https://*.tawk.to https://cdn.jsdelivr.net https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.ostr.io https://render.ostr.io https://*.doubleclick.net; style-src 'self' 'unsafe-inline' https://embed.tawk.to https://*.tawk.to https://cdn.jsdelivr.net; img-src 'self' data: https: blob:; font-src 'self' data: https://embed.tawk.to https://*.tawk.to https://cdn.jsdelivr.net https://fonts.gstatic.com; connect-src 'self' https://kdjlhibxxygfdmlvdfcl.supabase.co wss://kdjlhibxxygfdmlvdfcl.supabase.co https://*.supabase.co https://*.tawk.to wss://*.tawk.to https://va.tawk.to https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.merchant-center-analytics.goog https://*.ostr.io wss://*.ostr.io https://render.ostr.io https://www.google.com https://*.doubleclick.net https://*.googlesyndication.com; frame-src https://tawk.to https://*.tawk.to https://climate.stripe.com https://www.googletagmanager.com https://*.doubleclick.net; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <meta
+      name="twitter:image"
+      content="https://storage.googleapis.com/gpt-engineer-file-uploads/dATtYjrZg8XQKUHNOV3bqcwDO6T2/social-images/social-1760973850614-favicon%20png.png"
+    />
+
+    <!-- ostr.io domain verification -->
+    <meta name="ostrio-domain" content="kEcP5qgTnHdyUnqGhZ4JutNKs9jcESgeQ2-RJ6IQ0Kq" />
+    <script type="text/javascript">
+      adroll_adv_id = "GIMX5IOJBJFWNLB6OROAKY";
+      adroll_pix_id = "SBQW4HD665DVHNBMJDBE7M";
+      adroll_version = "2.0";
+
+      (function(w, d, e, o, a) {
+          w.adroll_tag_source = w.adroll_tag_source || "manual";
+          w.__adroll_loaded = true;
+          w.adroll = w.adroll || [];
+          w.adroll.f = [ 'setProperties', 'identify', 'track', 'identify_email', 'get_cookie' ];
+          var roundtripUrl = "https://s.adroll.com/j/" + adroll_adv_id
+                  + "/roundtrip.js";
+          for (a = 0; a < w.adroll.f.length; a++) {
+              w.adroll[w.adroll.f[a]] = w.adroll[w.adroll.f[a]] || (function(n) {
+                  return function() {
+                      w.adroll.push([ n, arguments ])
+                  }
+              })(w.adroll.f[a])
+          }
+
+          e = d.createElement('script');
+          o = d.getElementsByTagName('script')[0];
+          e.async = 1;
+          e.src = roundtripUrl;
+          o.parentNode.insertBefore(e, o);
+      })(window, document);
+      adroll.track("pageView");
+    </script>
+  </head>
+
+  <body>
+    <div id="root">
+      <!-- Minimal loading state for immediate FCP - hidden for prerender bots -->
+      <div id="initial-loader">
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-MZXRHMH2"
+        height="0"
+        width="0"
+        style="display:none;visibility:hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Noscript fallback for crawlers that don't execute JS -->
+    <noscript>
+      <div class="noscript-content">
+        <h1>WoW & MMO Boost Services | misti.services</h1>
+        <p>
+          Trusted gaming boost services since 2013. We offer power leveling, raid carries, PvP boosts, and more for WoW,
+          Path of Exile 2, Diablo IV, and other popular MMO games.
+        </p>
+        <p>Please enable JavaScript to use our website, or contact us at support@misti.services</p>
+        <nav class="noscript-nav">
+          <a href="/">Home</a>
+          <a href="/blog">Blog</a>
+          <a href="/about-us">About</a>
+          <a href="/contact-us">Contact</a>
+        </nav>
+      </div>
+    </noscript>
+
+    <script>
+      // Clickjacking protection (frame-busting fallback)
+      if (window.top !== window.self) {
+        window.top.location = window.self.location;
+      }
+      // Hide loader for prerender bots to allow content capture
+      (function(){
+        // Check ostr.io's prerendering flag first
+        if (window.IS_PRERENDERING === true) {
+          var loader = document.getElementById('initial-loader');
+          if(loader) loader.style.display = 'none';
+          return;
+        }
+        var ua = navigator.userAgent.toLowerCase();
+        var bots = ['googlebot','bingbot','prerender','lovablehtml','page-replica','headless','phantomjs','lighthouse','rendertron','puppeteer','facebookexternalhit','twitterbot','discordbot','whatsapp','telegrambot','linkedinbot','slackbot','applebot','yandex','baiduspider','ostr','render.ostr.io','gptbot','chatgpt','claudebot','perplexitybot'];
+        var isBot = bots.some(function(bot){ return ua.indexOf(bot) !== -1; });
+        if(isBot){
+          var loader = document.getElementById('initial-loader');
+          if(loader) loader.style.display = 'none';
+        }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

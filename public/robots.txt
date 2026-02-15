@@ -1,0 +1,50 @@
+# Robots.txt for misti.services
+
+# ----------------------------
+# GENERAL SEARCH ENGINES
+# ----------------------------
+User-agent: *
+Disallow: /admin
+Disallow: /checkout
+Disallow: /account
+Disallow: /orders
+Disallow: /order/
+Disallow: /payment-success
+Disallow: /auth
+Allow: /
+
+# ----------------------------
+# AI & LLM CRAWLERS (ALLOW)
+# ----------------------------
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: BingPreview
+Allow: /
+
+# ----------------------------
+# SITEMAP
+# ----------------------------
+Sitemap: https://misti.services/sitemap.xml

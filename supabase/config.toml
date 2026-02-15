@@ -1,0 +1,71 @@
+project_id = "kdjlhibxxygfdmlvdfcl"
+
+[functions.send-password-reset]
+verify_jwt = false
+
+[functions.send-order-notification]
+verify_jwt = true
+
+[functions.send-inquiry-notification]
+verify_jwt = false
+
+[functions.update-exchange-rates]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.verify-payment]
+verify_jwt = true
+
+[functions.handle-gone-pages]
+verify_jwt = false
+
+[functions.generate-product-seo]
+verify_jwt = true
+
+[functions.generate-product-faqs]
+verify_jwt = true
+
+[functions.generate-game-faqs]
+verify_jwt = true
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.upload-work-application-proof]
+verify_jwt = false
+
+[functions.generate-sitemap]
+verify_jwt = false
+
+[functions.generate-product-rewards]
+verify_jwt = true
+
+[functions.generate-product-meta-titles]
+verify_jwt = false
+
+[functions.generate-product-fields]
+verify_jwt = true
+
+[functions.sync-g2g-prices]
+verify_jwt = false
+
+[functions.get-redirects]
+verify_jwt = false
+
+[functions.test-redirect-live]
+verify_jwt = false
+
+[functions.change-user-email]
+verify_jwt = false
+
+[functions.validate-reset-token]
+verify_jwt = false
+
+[functions.complete-password-reset]
+verify_jwt = false
+
+[functions.log-security-event]
+verify_jwt = false
+

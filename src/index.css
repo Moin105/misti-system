@@ -1,0 +1,496 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Background - Deeper navy/purple tones */
+    --background: 220 40% 10%;
+    --foreground: 0 0% 98%;
+    
+    /* Cards - Rich dark blue/purple */
+    --card: 220 35% 14%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 220 35% 14%;
+    --popover-foreground: 0 0% 98%;
+    
+    /* PRIMARY: Navy Blue for all CTAs and interactive elements */
+    --primary: 220 70% 55%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* SECONDARY: Subtle purple backgrounds */
+    --secondary: 230 20% 20%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 220 15% 25%;
+    --muted-foreground: 220 10% 65%;
+    
+    /* ACCENT: Navy Blue for informational elements */
+    --accent: 220 70% 55%;
+    --accent-foreground: 0 0% 98%;
+    --accent-rgb: 76, 134, 198;
+    
+    /* ACCENT-SECONDARY: Soft cyan for supporting elements */
+    --accent-secondary: 190 70% 55%;
+    --accent-secondary-foreground: 220 40% 10%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Borders - deeper blue/purple */
+    --border: 220 30% 18%;
+    --input: 220 30% 18%;
+    --ring: 220 70% 55%;
+    
+    --radius: 0.75rem;
+    
+    /* Admin colors */
+    --admin-sidebar: 220 35% 14%;
+    --admin-sidebar-hover: 220 35% 18%;
+    --admin-sidebar-active: 220 70% 55%;
+    --admin-bg: 220 40% 10%;
+    --admin-card: 220 35% 12%;
+    --success: 142 70% 45%;
+    --warning: 43 100% 50%;
+    --info: 210 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Tawk.to Widget Protection - Prevent CSS conflicts */
+#tawk-bubble-container,
+#tawk-bubble-container *,
+.tawk-button,
+.tawk-button *,
+.tawk-min-container,
+.tawk-min-container *,
+[id^="tawk"],
+[id^="tawk"] *,
+[class^="tawk"],
+[class^="tawk"] * {
+  all: initial !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
+  line-height: normal !important;
+  color: inherit !important;
+}
+
+/* Ensure Tawk.to buttons display properly */
+[id^="tawk"] button,
+[class^="tawk"] button {
+  all: initial !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  color: inherit !important;
+}
+
+/* Ensure Tawk.to icons display */
+[id^="tawk"] svg,
+[class^="tawk"] svg {
+  display: inline-block !important;
+  width: 1em !important;
+  height: 1em !important;
+  fill: currentColor !important;
+  vertical-align: middle !important;
+}
+
+/* Tawk.to Widget Z-index Management - Keep chat widget below navigation and modals */
+#tawk-bubble-container,
+.tawk-button,
+.tawk-min-container,
+[id^="tawk"],
+[class^="tawk"] {
+  z-index: 35 !important;
+}
+
+/* Z-index hierarchy for consistent stacking order across the application
+  35: Chat widget (Tawk.to) - Below all UI elements
+  40: Cookie banner - Bottom/top fixed banner
+  50: Navigation - Main navigation bar
+  60: Dropdowns/Popovers - Navigation dropdowns, search results
+  70: Dialogs/Modals - Full-screen overlays
+  80: Toasts/Notifications - Temporary notifications
+  90: Critical overlays - System-critical messages
+*/
+
+/* Prose styling for rich text content */
+.prose {
+  color: hsl(var(--foreground));
+}
+
+.prose h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+  color: hsl(var(--foreground));
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.875rem;
+  line-height: 1.3;
+  color: hsl(var(--foreground));
+}
+
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+  color: hsl(var(--foreground));
+}
+
+.prose strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose a:hover {
+  color: hsl(var(--primary));
+  opacity: 0.8;
+}
+
+.prose ul, .prose ol {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.625rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
+}
+
+.prose li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.prose p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose a:hover {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Link hover effects */
+a {
+  @apply transition-colors duration-200;
+}
+
+a:hover {
+  @apply text-primary;
+}
+
+/* Gaming corner accents */
+.corner-accent {
+  position: relative;
+}
+
+.corner-accent::before,
+.corner-accent::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid hsl(var(--accent));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.corner-accent::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.corner-accent::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: none;
+  border-top: none;
+}
+
+.corner-accent:hover::before,
+.corner-accent:hover::after {
+  opacity: 1;
+}
+
+/* Scanline effect */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.scanline-effect::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(147, 112, 219, 0.03) 50%,
+    transparent 100%
+  );
+  height: 100px;
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Gaming grid pattern */
+.grid-pattern {
+  background-image: 
+    linear-gradient(hsl(var(--primary) / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Angular gaming corners */
+.clip-corners {
+  clip-path: polygon(
+    12px 0, 100% 0, 100% calc(100% - 12px), 
+    calc(100% - 12px) 100%, 0 100%, 0 12px
+  );
+}
+
+/* Navy blue accent utilities */
+.text-accent-glow {
+  text-shadow: 0 0 8px hsl(var(--accent));
+}
+
+.border-accent-glow {
+  box-shadow: 0 0 8px hsl(var(--accent) / 0.25);
+}
+
+/* Navy blue primary utilities for CTAs and interactive elements */
+.text-primary-glow {
+  text-shadow: 0 0 8px hsl(220 70% 55%);
+}
+
+.border-primary-glow {
+  box-shadow: 0 0 8px hsl(220 70% 55% / 0.25);
+}
+
+/* Blue to Purple Gradient Utilities */
+.gradient-text-primary {
+  @apply bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent;
+}
+
+.gradient-border-hover {
+  transition: all 0.3s ease;
+}
+
+.gradient-border-hover:hover {
+  box-shadow: 0 0 0 1px transparent, 0 0 20px rgba(59, 130, 246, 0.3);
+  border-color: rgb(59, 130, 246);
+}
+
+/* Gradient card hover effect */
+.gradient-card-hover {
+  position: relative;
+}
+
+.gradient-card-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #3b82f6, #a855f7);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.gradient-card-hover:hover::before {
+  opacity: 1;
+}
+
+/* Gradient price text */
+.gradient-price {
+  @apply bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-bold;
+}
+
+/* Gradient glow shadow */
+.gradient-glow-shadow {
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.3), inset 0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+/* Custom thin scrollbar for configurator panel */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+
+/* Custom dark-themed scrollbar for description panel */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+
+/* === PERFORMANCE OPTIMIZATION UTILITIES === */
+
+/* Layout containment for CLS prevention */
+.contain-layout { contain: layout; }
+.contain-layout-style-paint { contain: layout style paint; }
+
+/* Animation delay utilities */
+.animation-delay-100 { animation-delay: 0.1s; }
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+
+/* Will-change hints for GPU compositing */
+.will-change-opacity { will-change: opacity; }
+
+/* Fixed heights for CLS prevention */
+.min-h-hero { min-height: 592px; }
+.min-h-separator { min-height: 48px; }
+.h-separator { height: 48px; }
+
+/* Gradient backgrounds for radial patterns */
+.bg-gradient-radial-purple { 
+  background: radial-gradient(ellipse at 50% 0%, hsl(250, 50%, 20%) 0%, transparent 55%); 
+}
+.bg-gradient-radial-blue { 
+  background: radial-gradient(ellipse at 50% 0%, hsl(220, 60%, 25%) 0%, transparent 40%); 
+}
+
+/* Noscript fallback styles (moved from inline in index.html) */
+.noscript-content {
+  padding: 40px;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+.noscript-nav {
+  margin-top: 20px;
+}
+.noscript-nav a {
+  margin: 0 10px;
+}
+
+/* Animation duration utilities for Hero */
+.animate-duration-4s { animation-duration: 4s; }
+.animate-duration-5s { animation-duration: 5s; }
+
+/* Border gradient utilities */
+.border-gradient-blue-purple {
+  border-image: linear-gradient(90deg, transparent, hsl(217, 91%, 60%), hsl(271, 91%, 65%), transparent) 1;
+}
+
+/* === SKELETON ASPECT RATIO UTILITIES (CLS Prevention) === */
+
+/* Product card skeleton - matches ServiceItem card ratio */
+.skeleton-product-card {
+  aspect-ratio: 4/3;
+  min-height: 180px;
+}
+
+/* Service item skeleton - matches actual ServiceItem dimensions */
+.skeleton-service-item {
+  aspect-ratio: 16/9;
+  min-height: 288px; /* h-72 = 18rem = 288px */
+}
+
+/* Hero section skeleton */
+.skeleton-hero {
+  aspect-ratio: 16/5;
+  min-height: 200px;
+}
+
+/* Thumbnail skeleton */
+.skeleton-thumbnail {
+  aspect-ratio: 1/1;
+  min-height: 64px;
+}
