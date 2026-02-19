@@ -30,7 +30,15 @@
     "admin-reset-production": "tsx scripts/generate-admin-reset-for-production.ts",
     "verify-admin": "tsx scripts/verify-and-setup-admin.ts",
     "migrate-user-id": "tsx scripts/migrate-user-id.ts",
-    "cleanup-admin": "tsx scripts/cleanup-duplicates-and-fix-profile.ts"
+    "cleanup-admin": "tsx scripts/cleanup-duplicates-and-fix-profile.ts",
+    "fix-admin-password": "tsx scripts/fix-admin-password.ts",
+    "set-admin-password": "tsx scripts/set-admin-password-direct.ts",
+    "check-admin-access": "tsx scripts/check-admin-access.ts",
+    "fix-user-roles-permissions": "tsx scripts/fix-user-roles-permissions.ts",
+    "cleanup-duplicate-roles": "tsx scripts/cleanup-duplicate-roles.ts",
+    "verify-foreign-keys": "tsx scripts/verify-foreign-keys.ts",
+    "check-games-permissions": "tsx scripts/check-games-permissions.ts",
+    "check-games-structure": "tsx scripts/check-games-table-structure.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
