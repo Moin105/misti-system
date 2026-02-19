@@ -1,0 +1,16 @@
+Admin Password Reset Link - PRODUCTION
+Generated: 2026-02-19T22:26:53.691Z
+
+Email: milanbrezovac@gmail.com
+Production URL: https://misti-system.vercel.app
+
+Password Reset Link:
+https://sclvjrnnnbbptnhonoks.supabase.co/auth/v1/verify?token=91c4891ad88a2c60ac52714b8d59fc32be83a1aab4bb9f90853bb42d&type=recovery&redirect_to=http://localhost:3000
+
+Instructions:
+1. Click the link above
+2. Set a new password
+3. You will be redirected to production site
+4. Login with email and new password
+
+Note: Link expires in 1 hour
