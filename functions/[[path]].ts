@@ -75,8 +75,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     // Get Supabase URL and key from environment or use defaults
-    const supabaseUrl = env.SUPABASE_URL || "https://kdjlhibxxygfdmlvdfcl.supabase.co";
-    const supabaseKey = env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkamxoaWJ4eHlnZmRtbHZkZmNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzkxOTMsImV4cCI6MjA3NTAxNTE5M30.yzK3OTDrA-whQuTyOnth8j0SjY2MrodfjUDBojzgL6I";
+    const supabaseUrl = env.SUPABASE_URL || "https://sclvjrnnnbbptnhonoks.supabase.co";
+    const supabaseKey = env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjbHZqcm5ubmJicHRuaG9ub2tzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjk3MjEsImV4cCI6MjA4Njg0NTcyMX0.YK_RfC9JiclVdReaRK05-F1xMvjZtvJKzjrml-AkWbM";
 
     // Query the edge function for redirect
     const redirectCheckUrl = `${supabaseUrl}/functions/v1/get-redirects?path=${encodeURIComponent(path)}&incrementHit=true`;

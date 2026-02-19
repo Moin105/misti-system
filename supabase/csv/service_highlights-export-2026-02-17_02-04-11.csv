@@ -1,0 +1,5 @@
+id;icon_name;title;description;sort_order;is_active;created_at;updated_at
+75d2f244-65d7-4cb6-b6e7-188cdc600bb0;Rocket;Instant Replies;Get quick responses to your inquiries with our lightning-fast communication system;2;true;2025-10-26 19:45:33.442149+00;2025-10-26 19:45:33.442149+00
+bccd40ac-664b-4694-b1a8-555646530604;Clock;Start in Minutes;Begin your experience immediately with our streamlined onboarding process;3;true;2025-10-26 19:45:33.442149+00;2025-10-26 19:45:33.442149+00
+f33d68b0-11c9-4726-b104-555f935ab781;DollarSign;Cashback;Earn cashback on any purchase;1;true;2025-10-26 19:45:33.442149+00;2025-12-18 09:34:20.857351+00
+4d794d21-be35-4110-acd7-cea8f8ad2223;CheckCircle;24/7 Support;Our dedicated support team is available around the clock to assist you with any questions or concerns;0;true;2025-10-26 19:45:33.442149+00;2025-12-20 21:55:15.859245+00

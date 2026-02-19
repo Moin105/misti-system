@@ -24,7 +24,7 @@ const BOT_AGENTS = [
 ];
 
 // Supabase API base URL for predictive caching
-const SUPABASE_URL = 'https://kdjlhibxxygfdmlvdfcl.supabase.co';
+const SUPABASE_URL = 'https://sclvjrnnnbbptnhonoks.supabase.co';
 
 // API endpoints to cache with their TTL in seconds
 const API_CACHE_CONFIG = {

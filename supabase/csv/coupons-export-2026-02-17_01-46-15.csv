@@ -1,0 +1,4 @@
+id;code;discount_percentage;max_uses;current_uses;expires_at;is_active;applicable_games;applicable_categories;created_at;updated_at;created_by;applicable_products;show_on_pages;promo_banner_text;promo_banner_color;min_order_amount;max_uses_per_user;description;first_order_only
+62b7daba-18ce-4d11-b7cf-97b023012e86;MISTILAUNCH;5;15;7;2026-02-27 23:00:00+00;true;;;2025-11-22 09:00:59.5184+00;2026-02-08 14:47:39.757381+00;03765a40-f338-4035-a2ba-8928fff30834;;;;;;;;false
+041ec5db-8f82-49e5-968b-65045373feed;CUSTOMCODE;5;;8;;false;;;2025-12-21 18:40:04.32774+00;2026-02-11 01:22:04.336247+00;03765a40-f338-4035-a2ba-8928fff30834;;;;;;;;false
+3d9ef148-7327-4e4d-802b-fe45177a45be;PRIVATECODE;5;5;0;;true;;;2026-01-26 22:11:21.645097+00;2026-02-11 01:24:27.572073+00;03765a40-f338-4035-a2ba-8928fff30834;;;;;;;;false

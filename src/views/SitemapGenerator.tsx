@@ -308,7 +308,8 @@ const SitemapGenerator = () => {
   };
 
   const openStorageUrl = () => {
-    window.open('https://kdjlhibxxygfdmlvdfcl.supabase.co/storage/v1/object/public/sitemap/sitemap.xml', '_blank');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://sclvjrnnnbbptnhonoks.supabase.co';
+    window.open(`${supabaseUrl}/storage/v1/object/public/sitemap/sitemap.xml`, '_blank');
   };
 
   const handlePublish = async () => {

@@ -1,0 +1,2 @@
+id;setting_key;setting_value;updated_at;updated_by
+8e5be674-0b51-41bc-b63d-83510cda93a8;mfa_enforcement;"{""require_for_admins"":true,""require_for_all"":false}";2026-01-25 17:57:39.118751+00;

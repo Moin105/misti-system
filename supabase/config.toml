@@ -1,4 +1,4 @@
-project_id = "kdjlhibxxygfdmlvdfcl"
+project_id = "sclvjrnnnbbptnhonoks"
 
 [functions.send-password-reset]
 verify_jwt = false
@@ -54,8 +54,6 @@ verify_jwt = false
 [functions.get-redirects]
 verify_jwt = false
 
-[functions.test-redirect-live]
-verify_jwt = false
 
 [functions.change-user-email]
 verify_jwt = false

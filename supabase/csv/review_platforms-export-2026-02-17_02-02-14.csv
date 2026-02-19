@@ -1,0 +1,3 @@
+id;name;slug;url;logo_url;primary_color;average_rating;total_reviews;is_active;sort_order;created_at;updated_at
+d94d98f5-3453-4196-b3f2-0b02263af136;Trustpilot;trustpilot;https://www.trustpilot.com/review/misti.services;;#00B67A;5.0;150;true;1;2025-10-21 09:32:48.738447+00;2025-10-21 09:32:48.738447+00
+46fa8b6d-356c-4dd8-a560-f4607143ebeb;Reviews.io;https://www.reviews.io/company-reviews/store/misti.services;https://www.reviews.io/company-reviews/store/misti.services;;#00ffff;5.0;20;true;1;2026-01-16 22:33:37.219419+00;2026-01-16 22:35:02.705112+00

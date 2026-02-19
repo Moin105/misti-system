@@ -1,0 +1,5 @@
+id;title;slug;sort_order;is_active;created_at;updated_at
+4ed9688d-dbba-44b6-9551-b615fc80ae80;Legal;legal;2;true;2025-10-04 14:16:29.751369+00;2025-10-04 14:16:29.751369+00
+aad558ac-3bbf-4340-b5eb-f33112714311;Popular Services;popular-services;3;true;2025-10-04 14:16:29.751369+00;2025-10-04 14:16:29.751369+00
+5d70df03-6c5a-40a9-976c-266de9fcfcb4;Other Games;other-games;4;true;2025-10-04 14:16:29.751369+00;2025-10-04 14:16:29.751369+00
+07cf3db0-84d4-4c52-bea7-7fadfd943d00;Company;company;1;true;2025-10-04 14:16:29.751369+00;2025-10-04 14:19:04.053214+00

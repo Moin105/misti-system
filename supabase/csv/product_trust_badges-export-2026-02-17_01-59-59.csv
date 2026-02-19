@@ -1,0 +1,5 @@
+id;icon_name;title;description;sort_order;is_active;created_at;updated_at
+4797cff9-4520-416a-b955-a42e26528681;DollarSign;Cashback;Cashback on every purchase!;2;true;2025-10-26 20:06:38.645599+00;2025-10-26 21:13:12.020649+00
+8ce5a89a-c42f-42c6-8c98-0fff5cfc77e3;Shield;100% Safe;Secure transactions via Stripe!;1;true;2025-10-26 20:06:38.645599+00;2025-10-26 21:13:52.990014+00
+d1b2111d-8d75-4808-98e1-4b62ce0362cd;ShieldCheck;Livestream;Livestream on request!;4;true;2025-11-13 22:28:48.117536+00;2025-11-13 22:29:26.047474+00
+cfe1b12f-62df-4fd8-92e1-db9f32adc352;Award;Human Support;Live Support from Real Experts!;4;true;2025-10-26 20:06:38.645599+00;2026-02-06 01:53:00.41909+00
