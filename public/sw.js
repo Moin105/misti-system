@@ -138,40 +138,52 @@ async function prefetchRelatedGameData(gameSlug, apiKey) {
     
     // Prefetch categories for this game (fire and forget)
     fetch(
-      `${SUPABASE_URL}/rest/v1/categories?game_id=eq.${gameId}&is_active=eq.true&order=sort_order.asc`,
+      `${SUPABASE_URL}/rest/v1/categories?game_id=eq.${gameId}&is_active=eq.true&order=sort_order.asc&select=id`,
       { headers }
     ).then(async (res) => {
       if (res.ok) {
-        const cache = await caches.open(API_CACHE_NAME);
-        // Clone response and add cache timestamp header
+        // Clone response for caching
         const clonedRes = res.clone();
+        
+        // Parse the original response to get category IDs
+        const categories = await res.json();
+        
+        // Cache the categories response
+        const cache = await caches.open(API_CACHE_NAME);
         const newHeaders = new Headers(clonedRes.headers);
         newHeaders.set('sw-cached-at', Date.now().toString());
         const body = await clonedRes.text();
-        cache.put(res.url, new Response(body, {
+        cache.put(clonedRes.url, new Response(body, {
           status: clonedRes.status,
           statusText: clonedRes.statusText,
           headers: newHeaders,
         }));
-      }
-    }).catch(() => {});
-
-    // Prefetch first page of products for these categories
-    fetch(
-      `${SUPABASE_URL}/rest/v1/products?category_id=in.(select id from categories where game_id='${gameId}')&is_active=eq.true&order=sort_order.asc&limit=12`,
-      { headers }
-    ).then(async (res) => {
-      if (res.ok) {
-        const cache = await caches.open(API_CACHE_NAME);
-        const clonedRes = res.clone();
-        const newHeaders = new Headers(clonedRes.headers);
-        newHeaders.set('sw-cached-at', Date.now().toString());
-        const body = await clonedRes.text();
-        cache.put(res.url, new Response(body, {
-          status: clonedRes.status,
-          statusText: clonedRes.statusText,
-          headers: newHeaders,
-        }));
+        
+        // Now fetch products using the category IDs
+        if (categories && categories.length > 0) {
+          // Extract category IDs and format for PostgREST in.() filter
+          const categoryIds = categories.map(cat => cat.id).join(',');
+          
+          // Prefetch first page of products for these categories
+          // Use proper PostgREST syntax: category_id=in.(id1,id2,id3)
+          fetch(
+            `${SUPABASE_URL}/rest/v1/products?category_id=in.(${categoryIds})&is_active=eq.true&order=sort_order.asc&limit=12`,
+            { headers }
+          ).then(async (productsRes) => {
+            if (productsRes.ok) {
+              const productsCache = await caches.open(API_CACHE_NAME);
+              const productsClonedRes = productsRes.clone();
+              const productsNewHeaders = new Headers(productsClonedRes.headers);
+              productsNewHeaders.set('sw-cached-at', Date.now().toString());
+              const productsBody = await productsClonedRes.text();
+              productsCache.put(productsRes.url, new Response(productsBody, {
+                status: productsClonedRes.status,
+                statusText: productsClonedRes.statusText,
+                headers: productsNewHeaders,
+              }));
+            }
+          }).catch(() => {});
+        }
       }
     }).catch(() => {});
   } catch (e) {

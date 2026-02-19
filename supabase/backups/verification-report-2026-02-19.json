@@ -1,0 +1,748 @@
+{
+  "tables": [
+    {
+      "name": "about_stats",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "blog_categories",
+      "rowCount": 5,
+      "hasData": true
+    },
+    {
+      "name": "blog_posts",
+      "rowCount": 44,
+      "hasData": true
+    },
+    {
+      "name": "cart_items",
+      "rowCount": 41,
+      "hasData": true
+    },
+    {
+      "name": "cashback_tiers",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "cashback_transactions",
+      "rowCount": 138,
+      "hasData": true
+    },
+    {
+      "name": "categories",
+      "rowCount": 69,
+      "hasData": true
+    },
+    {
+      "name": "chat_cta_config",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "chat_integration",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "cms_pages",
+      "rowCount": 2,
+      "hasData": true
+    },
+    {
+      "name": "competitor_configs",
+      "rowCount": 2,
+      "hasData": true
+    },
+    {
+      "name": "competitor_prices",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "contact_info",
+      "rowCount": 3,
+      "hasData": true
+    },
+    {
+      "name": "cookie_banner_config",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "cookie_categories",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "cookie_consent_logs",
+      "rowCount": 757,
+      "hasData": true
+    },
+    {
+      "name": "coupon_usage",
+      "rowCount": 24,
+      "hasData": true
+    },
+    {
+      "name": "coupons",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "deleted_urls",
+      "rowCount": 29,
+      "hasData": true
+    },
+    {
+      "name": "discord_config",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "exchange_rates",
+      "rowCount": 2,
+      "hasData": true
+    },
+    {
+      "name": "faq_generation_logs",
+      "rowCount": 574,
+      "hasData": true
+    },
+    {
+      "name": "footer_links",
+      "rowCount": 15,
+      "hasData": true
+    },
+    {
+      "name": "footer_sections",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "g2g_price_history",
+      "rowCount": 1235,
+      "hasData": true
+    },
+    {
+      "name": "g2g_price_sync",
+      "rowCount": 33,
+      "hasData": true
+    },
+    {
+      "name": "game_faqs",
+      "rowCount": 60,
+      "hasData": true
+    },
+    {
+      "name": "game_genre_assignments",
+      "rowCount": 13,
+      "hasData": true
+    },
+    {
+      "name": "game_genres",
+      "rowCount": 5,
+      "hasData": true
+    },
+    {
+      "name": "games",
+      "rowCount": 12,
+      "hasData": true
+    },
+    {
+      "name": "global_review_config",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "how_it_works_showcase",
+      "rowCount": 3,
+      "hasData": true
+    },
+    {
+      "name": "how_it_works_steps",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "inquiry_rate_limits",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "mfa_settings",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "order_items",
+      "rowCount": 194,
+      "hasData": true
+    },
+    {
+      "name": "orders",
+      "rowCount": 181,
+      "hasData": true
+    },
+    {
+      "name": "password_failed_verification_attempts",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "password_reset_tokens",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "payment_icons",
+      "rowCount": 7,
+      "hasData": true
+    },
+    {
+      "name": "payment_methods",
+      "rowCount": 2,
+      "hasData": true
+    },
+    {
+      "name": "price_change_log",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "price_comparisons",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "price_entities",
+      "rowCount": 2757,
+      "hasData": true
+    },
+    {
+      "name": "pricing_rules",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "product_drafts",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "product_faqs",
+      "rowCount": 2448,
+      "hasData": true
+    },
+    {
+      "name": "product_guarantees",
+      "rowCount": 2,
+      "hasData": true
+    },
+    {
+      "name": "product_inquiries",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "product_mappings",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "product_options",
+      "rowCount": 1342,
+      "hasData": true
+    },
+    {
+      "name": "product_rewards",
+      "rowCount": 499,
+      "hasData": true
+    },
+    {
+      "name": "product_trust_badges",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "products",
+      "rowCount": 504,
+      "hasData": true
+    },
+    {
+      "name": "profiles",
+      "rowCount": 113,
+      "hasData": true
+    },
+    {
+      "name": "rate_limits",
+      "rowCount": 1230,
+      "hasData": true
+    },
+    {
+      "name": "referral_config",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "referral_transactions",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "review_platforms",
+      "rowCount": 2,
+      "hasData": true
+    },
+    {
+      "name": "reviews",
+      "rowCount": 6,
+      "hasData": true
+    },
+    {
+      "name": "security_audit_log",
+      "rowCount": 1308,
+      "hasData": true
+    },
+    {
+      "name": "seo_generation_logs",
+      "rowCount": 4179,
+      "hasData": true
+    },
+    {
+      "name": "service_highlights",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "site_faqs",
+      "rowCount": 6,
+      "hasData": true
+    },
+    {
+      "name": "site_security_settings",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "sitemap_cache",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "sitemap_config",
+      "rowCount": 1,
+      "hasData": true
+    },
+    {
+      "name": "sitemap_static_pages",
+      "rowCount": 5,
+      "hasData": true
+    },
+    {
+      "name": "social_links",
+      "rowCount": 2,
+      "hasData": true
+    },
+    {
+      "name": "subcategories",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "supported_languages",
+      "rowCount": 3,
+      "hasData": true
+    },
+    {
+      "name": "translations",
+      "rowCount": 0,
+      "hasData": false
+    },
+    {
+      "name": "url_redirects",
+      "rowCount": 3,
+      "hasData": true
+    },
+    {
+      "name": "user_roles",
+      "rowCount": 114,
+      "hasData": true
+    },
+    {
+      "name": "why_we_features",
+      "rowCount": 4,
+      "hasData": true
+    },
+    {
+      "name": "work_applications",
+      "rowCount": 5,
+      "hasData": true
+    }
+  ],
+  "functions": [
+    "apply_coupon_usage",
+    "cleanup_expired_password_tokens",
+    "cleanup_expired_reset_tokens",
+    "cleanup_old_rate_limits",
+    "generate_order_number",
+    "generate_referral_code",
+    "get_admin_user_stats",
+    "get_blog_post_url",
+    "get_category_url",
+    "get_game_url",
+    "get_product_url",
+    "get_public_cashback_tiers",
+    "get_public_payment_methods",
+    "get_user_tier",
+    "get_visible_coupons",
+    "gin_extract_query_trgm",
+    "gin_extract_value_trgm",
+    "gin_trgm_consistent",
+    "gin_trgm_triconsistent",
+    "gtrgm_compress",
+    "gtrgm_consistent",
+    "gtrgm_decompress",
+    "gtrgm_distance",
+    "gtrgm_in",
+    "gtrgm_options",
+    "gtrgm_out",
+    "gtrgm_penalty",
+    "gtrgm_picksplit",
+    "gtrgm_same",
+    "gtrgm_union",
+    "handle_new_user",
+    "has_role",
+    "hook_password_verification_attempt",
+    "increment_redirect_hit",
+    "log_security_event",
+    "process_order_cashback",
+    "process_referral_reward",
+    "protect_profile_sensitive_columns",
+    "reverse_order_cashback",
+    "set_limit",
+    "set_referral_code",
+    "show_limit",
+    "show_trgm",
+    "similarity",
+    "similarity_dist",
+    "similarity_op",
+    "strict_word_similarity",
+    "strict_word_similarity_commutator_op",
+    "strict_word_similarity_dist_commutator_op",
+    "strict_word_similarity_dist_op",
+    "strict_word_similarity_op",
+    "track_deleted_blog_post",
+    "track_deleted_category",
+    "track_deleted_game",
+    "track_deleted_product",
+    "update_exchange_rate",
+    "update_product_sales",
+    "update_updated_at_column",
+    "validate_coupon",
+    "validate_referral_code",
+    "word_similarity",
+    "word_similarity_commutator_op",
+    "word_similarity_dist_commutator_op",
+    "word_similarity_dist_op",
+    "word_similarity_op"
+  ],
+  "triggers": [
+    "blog_post_deleted_trigger",
+    "category_deleted_trigger",
+    "game_deleted_trigger",
+    "product_deleted_trigger",
+    "protect_profile_columns",
+    "set_referral_code_trigger",
+    "trg_reverse_cashback_on_cancel",
+    "update_about_stats_updated_at",
+    "update_blog_posts_updated_at",
+    "update_cart_items_updated_at",
+    "update_cashback_tiers_updated_at",
+    "update_categories_updated_at",
+    "update_chat_integration_updated_at",
+    "update_cms_pages_updated_at",
+    "update_competitor_configs_updated_at",
+    "update_contact_info_updated_at",
+    "update_cookie_banner_config_updated_at",
+    "update_cookie_categories_updated_at",
+    "update_coupons_updated_at",
+    "update_discord_config_updated_at",
+    "update_footer_links_updated_at",
+    "update_footer_sections_updated_at",
+    "update_g2g_price_sync_updated_at",
+    "update_game_faqs_updated_at",
+    "update_game_genres_updated_at",
+    "update_games_updated_at",
+    "update_mfa_settings_updated_at",
+    "update_orders_updated_at",
+    "update_payment_methods_updated_at",
+    "update_pricing_rules_updated_at",
+    "update_product_drafts_updated_at",
+    "update_product_faqs_updated_at",
+    "update_product_inquiries_updated_at",
+    "update_product_mappings_updated_at",
+    "update_product_options_updated_at",
+    "update_product_sales_trigger",
+    "update_products_updated_at",
+    "update_profiles_updated_at",
+    "update_referral_config_updated_at",
+    "update_review_platforms_updated_at",
+    "update_reviews_updated_at",
+    "update_service_highlights_updated_at",
+    "update_subcategories_updated_at"
+  ],
+  "policies": [
+    "Admin only access competitor_configs",
+    "Admin only access competitor_prices",
+    "Admin only access price_change_log",
+    "Admin only access price_comparisons",
+    "Admin only access price_entities",
+    "Admin only access pricing_rules",
+    "Admin only access product_mappings",
+    "Admins can insert SEO logs",
+    "Admins can manage FAQ generation logs",
+    "Admins can manage about stats",
+    "Admins can manage all MFA settings",
+    "Admins can manage all consent logs",
+    "Admins can manage all inquiries",
+    "Admins can manage all orders",
+    "Admins can manage all referral transactions",
+    "Admins can manage banner config",
+    "Admins can manage blog categories",
+    "Admins can manage blog posts",
+    "Admins can manage categories",
+    "Admins can manage chat CTA",
+    "Admins can manage chat integration",
+    "Admins can manage contact info",
+    "Admins can manage cookie categories",
+    "Admins can manage coupons",
+    "Admins can manage deleted_urls",
+    "Admins can manage discord config",
+    "Admins can manage exchange rates",
+    "Admins can manage footer links",
+    "Admins can manage footer sections",
+    "Admins can manage g2g price sync",
+    "Admins can manage game FAQs",
+    "Admins can manage games",
+    "Admins can manage genre assignments",
+    "Admins can manage genres",
+    "Admins can manage global review config",
+    "Admins can manage guarantees",
+    "Admins can manage order items",
+    "Admins can manage pages",
+    "Admins can manage payment icons",
+    "Admins can manage payment methods",
+    "Admins can manage platforms",
+    "Admins can manage product FAQs",
+    "Admins can manage product drafts",
+    "Admins can manage product options",
+    "Admins can manage products",
+    "Admins can manage referral config",
+    "Admins can manage reviews",
+    "Admins can manage rewards",
+    "Admins can manage roles",
+    "Admins can manage security settings",
+    "Admins can manage service highlights",
+    "Admins can manage showcase items",
+    "Admins can manage site FAQs",
+    "Admins can manage sitemap cache",
+    "Admins can manage sitemap config",
+    "Admins can manage static pages",
+    "Admins can manage steps",
+    "Admins can manage subcategories",
+    "Admins can manage tiers",
+    "Admins can manage trust badges",
+    "Admins can update any profile",
+    "Admins can update orders",
+    "Admins can view SEO logs",
+    "Admins can view all coupon usage",
+    "Admins can view all order items",
+    "Admins can view all orders",
+    "Admins can view all profiles",
+    "Admins can view audit logs",
+    "Admins can view price history",
+    "Admins can view rate limits",
+    "Admins can view rate limits",
+    "Anyone can create consent logs",
+    "Anyone can read deleted_urls",
+    "Anyone can view active about stats",
+    "Anyone can view active banner config",
+    "Anyone can view active blog categories",
+    "Anyone can view active categories",
+    "Anyone can view active chat CTA",
+    "Anyone can view active chat integration",
+    "Anyone can view active contact info",
+    "Anyone can view active cookie categories",
+    "Anyone can view active coupons",
+    "Anyone can view active discord config",
+    "Anyone can view active footer links",
+    "Anyone can view active footer sections",
+    "Anyone can view active game FAQs",
+    "Anyone can view active games",
+    "Anyone can view active genres",
+    "Anyone can view active guarantees",
+    "Anyone can view active payment icons",
+    "Anyone can view active platforms",
+    "Anyone can view active product FAQs",
+    "Anyone can view active products",
+    "Anyone can view active referral config",
+    "Anyone can view active reviews",
+    "Anyone can view active service highlights",
+    "Anyone can view active showcase items",
+    "Anyone can view active site FAQs",
+    "Anyone can view active steps",
+    "Anyone can view active subcategories",
+    "Anyone can view active trust badges",
+    "Anyone can view approved rewards",
+    "Anyone can view exchange rates",
+    "Anyone can view genre assignments",
+    "Anyone can view global review config",
+    "Anyone can view product options",
+    "Anyone can view published pages",
+    "Anyone can view security settings",
+    "Anyone can view sitemap cache",
+    "Anyone can view sitemap config",
+    "Audit logs are immutable - no updates",
+    "Audit logs cannot be deleted by users",
+    "No authenticated access to failed attempts",
+    "No authenticated access to password tokens",
+    "No deletes allowed on audit logs",
+    "No public access to password reset tokens",
+    "No public access to verification attempts",
+    "No updates allowed on audit logs",
+    "No user can delete profiles",
+    "Only admins can access cashback_tiers directly",
+    "Only admins can view payment methods",
+    "Only service role can insert audit logs",
+    "Only service_role can insert price history",
+    "Only system can insert audit logs",
+    "Public cannot insert audit logs",
+    "Service role can delete rate limits",
+    "Service role can insert audit logs",
+    "Service role can insert rate limits",
+    "Service role can manage password reset tokens",
+    "Service role can manage translations",
+    "Service role can manage verification attempts",
+    "Service role manages failed attempts",
+    "Service role manages password tokens",
+    "Service role manages rate limits",
+    "Translations are publicly readable",
+    "Users can create inquiries",
+    "Users can create order items",
+    "Users can create order items for own orders",
+    "Users can create orders",
+    "Users can create their own orders",
+    "Users can delete their own cart items",
+    "Users can insert own MFA settings",
+    "Users can insert own profile",
+    "Users can insert their own MFA settings",
+    "Users can insert their own cart items",
+    "Users can manage own cart items",
+    "Users can only view their own cashback transactions",
+    "Users can update own MFA settings",
+    "Users can update own profile",
+    "Users can update their own MFA settings",
+    "Users can update their own cart items",
+    "Users can view own MFA settings",
+    "Users can view own consent logs",
+    "Users can view own coupon usage",
+    "Users can view own inquiries",
+    "Users can view own order items",
+    "Users can view own orders",
+    "Users can view own profile",
+    "Users can view own referral transactions",
+    "Users can view own transactions",
+    "Users can view their own MFA settings",
+    "Users can view their own cart items",
+    "Users can view their own cashback transactions",
+    "Users can view their own coupon usage",
+    "Users can view their own order items",
+    "Users can view their own orders",
+    "Users can view their referral transactions",
+    "public read"
+  ],
+  "constraints": [
+    "about_stats_pkey",
+    "blog_categories_pkey",
+    "blog_posts_pkey",
+    "cart_items_pkey",
+    "cashback_tiers_pkey",
+    "cashback_transactions_pkey",
+    "categories_game_id_fkey",
+    "categories_pkey",
+    "chat_cta_config_pkey",
+    "chat_integration_pkey",
+    "cms_pages_pkey",
+    "competitor_configs_pkey",
+    "competitor_prices_pkey",
+    "contact_info_pkey",
+    "cookie_banner_config_pkey",
+    "cookie_categories_pkey",
+    "cookie_consent_logs_pkey",
+    "coupon_usage_pkey",
+    "coupons_pkey",
+    "deleted_urls_pkey",
+    "discord_config_pkey",
+    "exchange_rates_pkey",
+    "faq_generation_logs_pkey",
+    "footer_links_pkey",
+    "footer_sections_pkey",
+    "g2g_price_history_pkey",
+    "g2g_price_sync_pkey",
+    "game_faqs_pkey",
+    "game_genre_assignments_pkey",
+    "game_genres_pkey",
+    "games_pkey",
+    "global_review_config_pkey",
+    "how_it_works_showcase_pkey",
+    "how_it_works_steps_pkey",
+    "inquiry_rate_limits_pkey",
+    "mfa_settings_pkey",
+    "order_items_pkey",
+    "orders_pkey",
+    "password_failed_verification_attempts_pkey",
+    "password_reset_tokens_pkey",
+    "payment_icons_pkey",
+    "payment_methods_pkey",
+    "price_change_log_pkey",
+    "price_comparisons_pkey",
+    "price_entities_pkey",
+    "pricing_rules_pkey",
+    "product_drafts_pkey",
+    "product_faqs_pkey",
+    "product_guarantees_pkey",
+    "product_inquiries_pkey",
+    "product_mappings_pkey",
+    "product_options_pkey",
+    "product_rewards_pkey",
+    "product_trust_badges_pkey",
+    "products_category_id_fkey",
+    "products_pkey",
+    "profiles_pkey",
+    "profiles_referred_by_fkey",
+    "rate_limits_pkey",
+    "referral_config_pkey",
+    "referral_transactions_pkey",
+    "review_platforms_pkey",
+    "reviews_pkey",
+    "security_audit_log_pkey",
+    "seo_generation_logs_pkey",
+    "service_highlights_pkey",
+    "site_faqs_pkey",
+    "site_security_settings_pkey",
+    "sitemap_cache_pkey",
+    "sitemap_config_pkey",
+    "sitemap_static_pages_pkey",
+    "social_links_pkey",
+    "subcategories_pkey",
+    "translations_pkey",
+    "url_redirects_pkey",
+    "user_roles_pkey",
+    "why_we_features_pkey",
+    "work_applications_pkey"
+  ],
+  "authUsers": 0,
+  "issues": []
+}

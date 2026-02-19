@@ -17,7 +17,10 @@
     "execute-sql": "tsx scripts/execute-sql-file.ts",
     "test-db-connection": "tsx scripts/test-db-connection.ts",
     "apply-migrations-and-import": "tsx scripts/apply-migrations-and-import.ts",
-    "exact-schema-import": "tsx scripts/exact-schema-import.ts"
+    "exact-schema-import": "tsx scripts/exact-schema-import.ts",
+    "diagnose-db": "tsx scripts/diagnose-database.ts",
+    "backup-all": "tsx scripts/comprehensive-backup.ts",
+    "verify-backup": "tsx scripts/verify-backup-completeness.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
