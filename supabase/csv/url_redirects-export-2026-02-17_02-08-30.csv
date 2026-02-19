@@ -1,4 +1,0 @@
-id;source_path;destination_path;is_pattern;status_code;is_active;hit_count;last_hit_at;created_at;updated_at;created_by;notes
-ffe0b431-d536-4bdc-8e40-964dbb5d4b9b;/game/wow-classic-20th-anniversary(/.*)?$;/game/wow-classic-era$1;true;301;true;0;;2026-01-15 01:26:27.618092+00;2026-01-15 01:34:34.330395+00;03765a40-f338-4035-a2ba-8928fff30834;
-1f8daaea-b2ed-4ce1-9a35-215b076e7b55;/services;/;false;301;true;0;;2026-01-21 13:19:40.140984+00;2026-01-21 13:19:40.140984+00;;
-229b0aef-bb89-4de6-98ae-aa970fa8012f;/game/warwithin(/.*)?$;/game/wow$1;true;301;true;0;;2026-01-28 12:44:57.529031+00;2026-01-29 09:18:22.109303+00;03765a40-f338-4035-a2ba-8928fff30834;

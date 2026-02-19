@@ -1,5 +1,0 @@
-id;name;slug;description;is_required;is_active;sort_order;created_at;updated_at
-8e450cec-a07f-4456-be58-61b695ea5a21;Necessary;necessary;Essential cookies required for the website to function properly. These cannot be disabled.;true;true;1;2025-10-25 06:28:14.516487+00;2025-10-25 06:28:14.516487+00
-1f0f41b8-dbca-40cb-8499-7c0f3b8d40cc;Analytics;analytics;Help us understand how visitors interact with our website by collecting and reporting information anonymously.;false;true;2;2025-10-25 06:28:14.516487+00;2025-10-25 06:28:14.516487+00
-5c64efc7-2fab-4646-bb2f-176e8c6c346b;Marketing;marketing;Used to track visitors across websites to display relevant advertisements and measure campaign effectiveness.;false;true;3;2025-10-25 06:28:14.516487+00;2025-10-25 06:28:14.516487+00
-916536d7-f3ff-4b58-a6a0-c3d7ace5113b;Preferences;preferences;Enable the website to remember choices you make and provide enhanced, personalized features.;false;true;4;2025-10-25 06:28:14.516487+00;2025-10-25 06:28:14.516487+00

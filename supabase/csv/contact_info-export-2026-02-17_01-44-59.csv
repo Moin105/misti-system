@@ -1,4 +1,0 @@
-id;label;value;icon_name;contact_type;is_active;sort_order;created_at;updated_at
-5c074ddd-6f28-47ff-b1c1-8ba2d90f8715;Email support;support@misti.services;Mail;email;true;0;2025-10-25 06:33:24.532257+00;2025-10-25 06:33:24.532257+00
-9a336c99-57ae-4efa-8145-78c9047869ef;Discord;mistiservices1;MessageCircle;discord;true;0;2025-10-25 06:33:50.858828+00;2025-10-25 06:33:50.858828+00
-0c4fb17e-f1a7-4b5c-a8b9-30f092c27c2d;Phone;	+1 307-683-8042 ;Phone;phone;true;0;2025-10-25 06:34:09.897414+00;2025-11-17 19:04:35.941538+00

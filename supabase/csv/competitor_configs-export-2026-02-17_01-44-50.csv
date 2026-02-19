@@ -1,3 +1,0 @@
-id;name;base_url;scrape_method;is_active;rate_limit_ms;created_at;updated_at
-7349a05d-14a1-4a82-9f57-66bb0d81bbed;blazingboost.com;https://blazingboost.com;firecrawl;true;3000;2026-01-07 14:07:11.836348+00;2026-01-07 14:07:11.836348+00
-5d8f529d-47c9-4e63-bf71-072f5472c964;https://skycoach.gg/;https://skycoach.gg/;firecrawl;true;3000;2026-01-07 17:45:13.554762+00;2026-01-07 17:45:13.554762+00

@@ -1,2 +1,0 @@
-id;name;rule_type;value;scope;game_id;category_id;product_id;competitor_id;max_decrease_percent;min_price_floor;require_approval;is_active;created_at;updated_at
-74a88948-77fd-482c-9568-5ad3367c25ba;undercut 5%;undercut_percent;5;all;;;;;10;0;false;true;2026-01-07 17:55:50.071148+00;2026-01-07 17:55:50.071148+00
