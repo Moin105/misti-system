@@ -89,7 +89,11 @@ export const AIContentGenerator = ({
       return;
     }
 
-    if (!gameId || !categoryId) {
+    // Ensure gameId and categoryId are strings and not null
+    const safeGameId = gameId ? String(gameId) : null;
+    const safeCategoryId = categoryId ? String(categoryId) : null;
+
+    if (!safeGameId || !safeCategoryId) {
       toast({
         title: "Error",
         description: "Please select a game and category first",
@@ -109,24 +113,59 @@ export const AIContentGenerator = ({
           description: "You must be logged in",
           variant: "destructive",
         });
+        setIsGenerating(false);
         return;
       }
+
+      console.log('[AIContentGenerator] Calling Edge Function with:', {
+        gameId: safeGameId,
+        categoryId: safeCategoryId,
+        productType,
+        sourceUrl: sourceUrl.trim().substring(0, 50) + '...'
+      });
 
       const response = await supabase.functions.invoke('generate-product-fields', {
         body: {
           sourceUrl: sourceUrl.trim(),
-          gameId,
-          categoryId,
+          gameId: safeGameId,
+          categoryId: safeCategoryId,
           productType,
-          gameName,
-          categoryName,
+          gameName: gameName || undefined,
+          categoryName: categoryName || undefined,
           regionPlatform: regionPlatform.trim() || undefined,
           notes: notes.trim() || undefined,
         },
       });
 
+      console.log('[AIContentGenerator] Edge Function response:', {
+        hasError: !!response.error,
+        hasData: !!response.data,
+        error: response.error,
+        data: response.data
+      });
+
       if (response.error) {
-        throw new Error(response.error.message || 'Failed to generate content');
+        // Extract detailed error information from the response
+        const errorDetails = (response.error as any)?.context?.body || response.error;
+        const errorMessage = errorDetails?.details || errorDetails?.message || response.error.message || 'Failed to generate content';
+        const errorHint = errorDetails?.hint || '';
+        const errorCode = errorDetails?.errorCode || errorDetails?.code || '';
+        const fullError = errorDetails?.fullError || '';
+        
+        console.error('[AIContentGenerator] Detailed error:', {
+          message: errorMessage,
+          hint: errorHint,
+          code: errorCode,
+          fullError: fullError,
+          originalError: response.error
+        });
+        
+        // Show detailed error message
+        const displayMessage = errorHint 
+          ? `${errorMessage}\n\n💡 ${errorHint}` 
+          : errorMessage;
+        
+        throw new Error(displayMessage);
       }
 
       const data = response.data;

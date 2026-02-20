@@ -21,14 +21,28 @@ interface GenerateRequest {
 }
 
 serve(async (req) => {
+  console.log('[FUNCTION START] Request received:', {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries())
+  });
+
   if (req.method === 'OPTIONS') {
+    console.log('[OPTIONS] CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const authHeader = req.headers.get('Authorization');
+    console.log('[AUTH] Authorization header present:', !!authHeader);
+    
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization required' }), {
+      console.error('[AUTH ERROR] No Authorization header');
+      return new Response(JSON.stringify({ 
+        error: 'Authorization required',
+        details: 'Missing Authorization header',
+        hint: 'Include Authorization: Bearer <token> header'
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -37,37 +51,49 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || 
       'https://sclvjrnnnbbptnhonoks.supabase.co';
     
-    // Try to get anon key from env, fallback to hardcoded (for Edge Functions)
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || 
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjbHZqcm5ubmJicHRuaG9ub2tzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjk3MjEsImV4cCI6MjA4Njg0NTcyMX0.YK_RfC9JiclVdReaRK05-F1xMvjZtvJKzjrml-AkWbM';
+    console.log('[CONFIG] Environment check:', {
+      supabaseUrl: supabaseUrl.substring(0, 30) + '...',
+      hasServiceKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      hasFirecrawlKey: !!Deno.env.get('FIRECRAWL_API_KEY'),
+      hasOpenAIKey: !!Deno.env.get('OPENAI_API_KEY')
+    });
     
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    
-    // Support both OpenAI and Lovable AI
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    const aiProvider = openaiApiKey ? 'openai' : (lovableApiKey ? 'lovable' : null);
 
+    // Detailed error checking with specific messages
     if (!supabaseServiceKey) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+      console.error('[ERROR] SUPABASE_SERVICE_ROLE_KEY not configured');
+      return new Response(JSON.stringify({ 
+        error: 'Server configuration error',
+        details: 'SUPABASE_SERVICE_ROLE_KEY environment variable is missing',
+        hint: 'Set SUPABASE_SERVICE_ROLE_KEY in Edge Function environment variables'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (!firecrawlApiKey) {
-      console.error('FIRECRAWL_API_KEY not configured');
-      return new Response(JSON.stringify({ error: 'Firecrawl connector not configured' }), {
+      console.error('[ERROR] FIRECRAWL_API_KEY not configured');
+      return new Response(JSON.stringify({ 
+        error: 'Firecrawl connector not configured',
+        details: 'FIRECRAWL_API_KEY environment variable is missing',
+        hint: 'Set FIRECRAWL_API_KEY in Edge Function environment variables'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (!aiProvider) {
-      console.error('Neither OPENAI_API_KEY nor LOVABLE_API_KEY configured');
-      return new Response(JSON.stringify({ error: 'AI provider not configured. Please set OPENAI_API_KEY or LOVABLE_API_KEY' }), {
+    if (!openaiApiKey) {
+      console.error('[ERROR] OPENAI_API_KEY not configured');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured',
+        details: 'OPENAI_API_KEY environment variable is missing',
+        hint: 'Set OPENAI_API_KEY in Edge Function environment variables'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -76,41 +102,134 @@ serve(async (req) => {
     // Extract token from Authorization header
     const token = authHeader.replace('Bearer ', '');
     
+    if (!token || token.length < 10) {
+      console.error('[ERROR] Invalid token format - token too short or missing');
+      return new Response(JSON.stringify({ 
+        error: 'Invalid authorization token',
+        details: 'Token is missing or too short',
+        hint: 'Make sure Authorization header contains a valid Bearer token'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     // Create service role client for auth verification (same pattern as verify-payment)
     const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
     });
 
     // Verify user is authenticated using token directly
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
+    console.log('[AUTH] Verifying JWT token...', {
+      tokenLength: token.length,
+      tokenStart: token.substring(0, 20) + '...',
+      supabaseUrl: supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey
+    });
     
-    if (userError || !user) {
-      console.error('Auth error:', userError?.message);
-      console.error('Token preview:', token.substring(0, 20) + '...');
+    let user, userError;
+    try {
+      const authResult = await supabaseAuth.auth.getUser(token);
+      user = authResult.data?.user;
+      userError = authResult.error;
+      
+      console.log('[AUTH] getUser result:', {
+        hasUser: !!user,
+        hasError: !!userError,
+        errorMessage: userError?.message,
+        userId: user?.id
+      });
+    } catch (authException) {
+      console.error('[AUTH EXCEPTION] Exception during getUser:', {
+        error: authException instanceof Error ? authException.message : String(authException),
+        stack: authException instanceof Error ? authException.stack : undefined
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Authentication exception',
+        details: authException instanceof Error ? authException.message : 'Unknown exception during token verification',
+        hint: 'Check function logs for more details'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (userError) {
+      console.error('[AUTH ERROR] JWT verification failed:', {
+        message: userError.message,
+        status: userError.status,
+        name: userError.name,
+        code: (userError as any).code,
+        tokenPreview: token.substring(0, 30) + '...',
+        fullError: JSON.stringify(userError, Object.getOwnPropertyNames(userError))
+      });
       return new Response(JSON.stringify({ 
         error: 'Invalid JWT', 
-        details: userError?.message || 'User authentication failed',
-        hint: 'Token verification failed. Make sure you are logged in and token is valid.'
+        details: userError.message || 'JWT verification failed',
+        errorCode: userError.status || (userError as any).code || 'unknown',
+        errorName: userError.name || 'AuthError',
+        fullError: JSON.stringify(userError, Object.getOwnPropertyNames(userError)),
+        hint: 'Token may be expired, invalid, or malformed. Try logging out and logging back in.'
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    if (!user) {
+      console.error('[AUTH ERROR] User is null after successful token verification');
+      return new Response(JSON.stringify({ 
+        error: 'User not found', 
+        details: 'Token verified but user data is missing',
+        hint: 'User may have been deleted or token is invalid'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log('[AUTH] User verified:', { id: user.id, email: user.email });
 
     // Check admin role (using same service role client)
-    const { data: roleData } = await supabaseAuth
+    console.log('[AUTH] Checking admin role for user:', user.id);
+    const { data: roleData, error: roleError } = await supabaseAuth
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .eq('role', 'admin')
       .maybeSingle();
 
+    if (roleError) {
+      console.error('[AUTH ERROR] Failed to check admin role:', {
+        message: roleError.message,
+        code: roleError.code,
+        details: roleError.details,
+        hint: roleError.hint
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Failed to verify admin role',
+        details: roleError.message || 'Database query failed',
+        errorCode: roleError.code || 'unknown',
+        hint: roleError.hint || 'Check database permissions and RLS policies'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (!roleData) {
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      console.warn('[AUTH] User does not have admin role:', user.id);
+      return new Response(JSON.stringify({ 
+        error: 'Admin access required',
+        details: `User ${user.email} does not have admin role`,
+        hint: 'Contact an administrator to grant admin access'
+      }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    console.log('[AUTH] Admin role verified');
 
     const body: GenerateRequest = await req.json();
     const { sourceUrl, gameId, categoryId, productType, regionPlatform, unit, deliveryMethod, notes, gameName, categoryName } = body;
@@ -146,8 +265,25 @@ serve(async (req) => {
 
     if (!scrapeResponse.ok) {
       const errorText = await scrapeResponse.text();
-      console.error('Firecrawl error:', errorText);
-      return new Response(JSON.stringify({ error: 'Failed to fetch source page. The website may be blocking scrapers.' }), {
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = { message: errorText };
+      }
+      
+      console.error('[FIRECRAWL ERROR] Scraping failed:', {
+        status: scrapeResponse.status,
+        statusText: scrapeResponse.statusText,
+        error: errorDetails
+      });
+      
+      return new Response(JSON.stringify({ 
+        error: 'Failed to fetch source page',
+        details: errorDetails.error?.message || errorDetails.message || 'Scraping failed',
+        status: scrapeResponse.status,
+        hint: 'The website may be blocking scrapers, or the URL is invalid. Try a different URL.'
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -163,7 +299,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Step 2: Generating original content with AI (Provider: ${aiProvider})`);
+    console.log('[AI] Step 2: Generating original content with OpenAI');
 
     // Build the AI prompt based on product type
     let productTypeInstructions = '';
@@ -257,10 +393,10 @@ Generate a complete product listing in the following JSON format:
 
 IMPORTANT: NO EMOJIS anywhere. Return ONLY the JSON object, no markdown formatting.`;
 
-    // Use OpenAI or Lovable AI based on available keys
+    // Use OpenAI API
+    console.log('[AI] Calling OpenAI API...');
     let aiResponse;
-    if (aiProvider === 'openai') {
-      console.log('Using OpenAI API');
+    try {
       aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -268,7 +404,7 @@ IMPORTANT: NO EMOJIS anywhere. Return ONLY the JSON object, no markdown formatti
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o', // or 'gpt-4-turbo' or 'gpt-3.5-turbo'
+          model: 'gpt-4o',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -277,51 +413,111 @@ IMPORTANT: NO EMOJIS anywhere. Return ONLY the JSON object, no markdown formatti
           max_tokens: 4000,
         }),
       });
-    } else {
-      console.log('Using Lovable AI API');
-      aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-        }),
-      });
-    }
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI gateway error:', aiResponse.status, errorText);
-      
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add funds to continue.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      return new Response(JSON.stringify({ error: 'AI generation failed' }), {
+    } catch (fetchError) {
+      console.error('[AI ERROR] Network error calling OpenAI:', fetchError);
+      return new Response(JSON.stringify({ 
+        error: 'Network error calling OpenAI API',
+        details: fetchError instanceof Error ? fetchError.message : 'Unknown network error',
+        hint: 'Check internet connection and OpenAI API status'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const aiData = await aiResponse.json();
-    const generatedText = aiData.choices?.[0]?.message?.content || '';
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = { message: errorText };
+      }
+      
+      console.error('[AI ERROR] OpenAI API error:', {
+        status: aiResponse.status,
+        statusText: aiResponse.statusText,
+        error: errorDetails
+      });
+      
+      if (aiResponse.status === 401) {
+        return new Response(JSON.stringify({ 
+          error: 'OpenAI API authentication failed',
+          details: errorDetails.error?.message || 'Invalid API key',
+          hint: 'Check OPENAI_API_KEY in Edge Function environment variables'
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'OpenAI rate limit exceeded',
+          details: errorDetails.error?.message || 'Too many requests',
+          hint: 'Wait a moment and try again, or check your OpenAI usage limits'
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      if (aiResponse.status === 402 || aiResponse.status === 403) {
+        return new Response(JSON.stringify({ 
+          error: 'OpenAI billing/quota issue',
+          details: errorDetails.error?.message || 'Payment required or quota exceeded',
+          hint: 'Check your OpenAI account billing and usage limits'
+        }), {
+          status: aiResponse.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API request failed',
+        details: errorDetails.error?.message || errorText || 'Unknown error',
+        status: aiResponse.status,
+        statusText: aiResponse.statusText,
+        hint: 'Check OpenAI API status and your account settings'
+      }), {
+        status: aiResponse.status >= 400 && aiResponse.status < 500 ? aiResponse.status : 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    console.log('Step 3: Parsing AI response');
+    let aiData;
+    try {
+      aiData = await aiResponse.json();
+    } catch (parseError) {
+      console.error('[AI ERROR] Failed to parse OpenAI response:', parseError);
+      const responseText = await aiResponse.text();
+      return new Response(JSON.stringify({ 
+        error: 'Invalid response from OpenAI API',
+        details: 'Response is not valid JSON',
+        responsePreview: responseText.substring(0, 200),
+        hint: 'OpenAI API may have returned an unexpected format'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    const generatedText = aiData.choices?.[0]?.message?.content || '';
+    
+    if (!generatedText) {
+      console.error('[AI ERROR] No content in OpenAI response:', aiData);
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI returned empty content',
+        details: 'No text generated in response',
+        response: aiData,
+        hint: 'Check OpenAI API response format or try again'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('[AI] Step 3: Parsing AI response (length:', generatedText.length, 'chars)');
 
     // Parse the JSON from AI response
     let generatedProduct;
@@ -354,8 +550,18 @@ IMPORTANT: NO EMOJIS anywhere. Return ONLY the JSON object, no markdown formatti
       generatedProduct = JSON.parse(cleanedText);
       console.log('Successfully parsed AI response');
     } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError, generatedText);
-      return new Response(JSON.stringify({ error: 'Failed to parse AI-generated content. Please try again.' }), {
+      console.error('[PARSE ERROR] Failed to parse AI response:', {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+        stack: parseError instanceof Error ? parseError.stack : undefined,
+        generatedTextLength: generatedText.length,
+        generatedTextPreview: generatedText.substring(0, 500)
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Failed to parse AI-generated content',
+        details: parseError instanceof Error ? parseError.message : 'JSON parsing failed',
+        generatedTextPreview: generatedText.substring(0, 500),
+        hint: 'AI may have returned invalid JSON. Try generating again.'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -420,8 +626,17 @@ IMPORTANT: NO EMOJIS anywhere. Return ONLY the JSON object, no markdown formatti
     });
 
   } catch (error) {
-    console.error('Error in generate-product-fields:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error occurred' }), {
+    console.error('[FATAL ERROR] Unexpected error in generate-product-fields:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'UnknownError'
+    });
+    return new Response(JSON.stringify({ 
+      error: 'Unexpected server error',
+      details: error instanceof Error ? error.message : 'Unknown error occurred',
+      errorType: error instanceof Error ? error.name : typeof error,
+      hint: 'Check function logs for more details'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
