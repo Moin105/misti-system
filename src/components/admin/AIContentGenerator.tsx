@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { env } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,6 +106,10 @@ export const AIContentGenerator = ({
     setIsGenerating(true);
 
     try {
+      // Get current Supabase URL to verify session issuer
+      const currentSupabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+      console.log('[AIContentGenerator] Current Supabase URL:', currentSupabaseUrl);
+      
       // Get fresh session and ensure it's valid
       let { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -136,6 +141,51 @@ export const AIContentGenerator = ({
         }
         
         session = refreshedSession;
+      }
+      
+      // CRITICAL: Verify session issuer matches current Supabase project
+      // Decode JWT to check issuer (without verification, just to read the payload)
+      try {
+        const tokenParts = session.access_token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const tokenIssuer = payload.iss;
+          const expectedIssuer = `${currentSupabaseUrl}/auth/v1`;
+          
+          console.log('[AIContentGenerator] Token issuer check:', {
+            tokenIssuer,
+            expectedIssuer,
+            matches: tokenIssuer === expectedIssuer
+          });
+          
+          if (tokenIssuer !== expectedIssuer) {
+            console.error('[AIContentGenerator] Token issuer mismatch!', {
+              tokenIssuer,
+              expectedIssuer,
+              currentSupabaseUrl
+            });
+            
+            // Clear old session and force re-login
+            await supabase.auth.signOut();
+            
+            toast({
+              title: "Session Expired",
+              description: "Your session is from a different project. Please log in again.",
+              variant: "destructive",
+            });
+            
+            // Redirect to login after a short delay
+            setTimeout(() => {
+              window.location.href = '/auth';
+            }, 2000);
+            
+            setIsGenerating(false);
+            return;
+          }
+        }
+      } catch (decodeError) {
+        console.error('[AIContentGenerator] Failed to decode token:', decodeError);
+        // Continue anyway, let the server verify
       }
       
       // Check if token is expired or about to expire (within 1 minute)
