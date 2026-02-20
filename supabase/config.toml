@@ -25,7 +25,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.generate-product-faqs]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-game-faqs]
 verify_jwt = true
@@ -40,13 +40,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-product-rewards]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-product-meta-titles]
 verify_jwt = false
 
 [functions.generate-product-fields]
-verify_jwt = true
+verify_jwt = false
 
 [functions.sync-g2g-prices]
 verify_jwt = false

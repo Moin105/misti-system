@@ -48,32 +48,100 @@ serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 
-      'https://sclvjrnnnbbptnhonoks.supabase.co';
-    
-    console.log('[CONFIG] Environment check:', {
-      supabaseUrl: supabaseUrl.substring(0, 30) + '...',
-      hasServiceKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-      hasFirecrawlKey: !!Deno.env.get('FIRECRAWL_API_KEY'),
-      hasOpenAIKey: !!Deno.env.get('OPENAI_API_KEY')
-    });
-    
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        
+        if (!supabaseUrl) {
+          console.error('[ERROR] SUPABASE_URL not configured');
+          return new Response(JSON.stringify({ 
+            error: 'Server configuration error',
+            details: 'SUPABASE_URL environment variable is missing',
+            hint: 'Set SUPABASE_URL in Edge Function environment variables'
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        // Try both possible secret names (Supabase may block SUPABASE_ prefix)
+        const supabaseServiceKey = Deno.env.get('SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        
+        // Log all environment variables (without exposing secrets)
+        const allEnvVars = Object.keys(Deno.env.toObject());
+        const relevantEnvVars = allEnvVars.filter(key => 
+          key.includes('SUPABASE') || key.includes('SERVICE') || key.includes('FIRE') || key.includes('OPENAI')
+        );
+        
+        console.log('[CONFIG] Environment check:', {
+          supabaseUrl: supabaseUrl.substring(0, 30) + '...',
+          hasServiceKey: !!supabaseServiceKey,
+          serviceKeyLength: supabaseServiceKey?.length || 0,
+          serviceKeyPreview: supabaseServiceKey ? supabaseServiceKey.substring(0, 20) + '...' : 'MISSING',
+          hasFirecrawlKey: !!Deno.env.get('FIRECRAWL_API_KEY'),
+          hasOpenAIKey: !!Deno.env.get('OPENAI_API_KEY'),
+          allRelevantEnvVars: relevantEnvVars,
+          serviceKeySource: Deno.env.get('SERVICE_ROLE_KEY') ? 'SERVICE_ROLE_KEY' : (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ? 'SUPABASE_SERVICE_ROLE_KEY' : 'NONE')
+        });
+        
+        const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+        const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    // Detailed error checking with specific messages
-    if (!supabaseServiceKey) {
-      console.error('[ERROR] SUPABASE_SERVICE_ROLE_KEY not configured');
-      return new Response(JSON.stringify({ 
-        error: 'Server configuration error',
-        details: 'SUPABASE_SERVICE_ROLE_KEY environment variable is missing',
-        hint: 'Set SUPABASE_SERVICE_ROLE_KEY in Edge Function environment variables'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+        // Detailed error checking with specific messages
+        if (!supabaseServiceKey) {
+          console.error('[ERROR] Service role key not configured');
+          console.error('[ERROR] Checked both SERVICE_ROLE_KEY and SUPABASE_SERVICE_ROLE_KEY');
+          console.error('[ERROR] Available env vars:', allEnvVars);
+          return new Response(JSON.stringify({ 
+            error: 'Server configuration error',
+            details: 'Service role key environment variable is missing. Checked both SERVICE_ROLE_KEY and SUPABASE_SERVICE_ROLE_KEY.',
+            hint: 'Set SERVICE_ROLE_KEY in Supabase Dashboard → Edge Functions → Settings → Secrets. Get the RAW key from Dashboard → Settings → API → service_role key (copy it EXACTLY as-is, do NOT encrypt/hash it).'
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        // Verify service key format (should be a JWT)
+        // Try to decode and verify it's a service_role key
+        let keyIsValid = false;
+        let keyRole = 'unknown';
+        let keyError = '';
+        try {
+          const parts = supabaseServiceKey.split('.');
+          if (parts.length === 3) {
+            // Decode JWT payload (second part)
+            const payload = JSON.parse(atob(parts[1]));
+            keyRole = payload.role || 'unknown';
+            keyIsValid = payload.role === 'service_role';
+            
+            console.log('[CONFIG] Service key decoded:', {
+              role: keyRole,
+              ref: payload.ref,
+              isValid: keyIsValid
+            });
+          } else {
+            keyError = 'Key does not have 3 JWT parts (header.payload.signature)';
+          }
+        } catch (decodeError) {
+          keyError = decodeError instanceof Error ? decodeError.message : String(decodeError);
+          console.error('[ERROR] Could not decode service key:', decodeError);
+        }
+        
+        if (!keyIsValid) {
+          console.error('[ERROR] Service role key format invalid or wrong role');
+          console.error('[ERROR] Key preview:', supabaseServiceKey.substring(0, 50) + '...');
+          console.error('[ERROR] Key length:', supabaseServiceKey.length);
+          console.error('[ERROR] Key role detected:', keyRole);
+          console.error('[ERROR] Decode error:', keyError);
+          
+          return new Response(JSON.stringify({ 
+            error: 'Server configuration error',
+            details: `Service role key is not a valid service_role JWT token. Key length: ${supabaseServiceKey.length}, Detected role: ${keyRole}, Error: ${keyError || 'none'}`,
+            hint: 'CRITICAL FIX: The secret value MUST be the RAW service_role key from Dashboard → Settings → API → service_role key. It should start with "eyJ..." and be very long. Do NOT encrypt, hash, or modify it. Paste it EXACTLY as shown in the Dashboard. If you cannot delete the old secret, create a NEW one named "SERVICE_ROLE_KEY" with the correct value.'
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
 
     if (!firecrawlApiKey) {
       console.error('[ERROR] FIRECRAWL_API_KEY not configured');
@@ -190,34 +258,110 @@ serve(async (req) => {
     
     console.log('[AUTH] User verified:', { id: user.id, email: user.email });
 
-    // Check admin role (using same service role client)
+    // Check admin role - try RPC first, fallback to direct query if RPC fails
     console.log('[AUTH] Checking admin role for user:', user.id);
-    const { data: roleData, error: roleError } = await supabaseAuth
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (roleError) {
-      console.error('[AUTH ERROR] Failed to check admin role:', {
-        message: roleError.message,
-        code: roleError.code,
-        details: roleError.details,
-        hint: roleError.hint
+    console.log('[AUTH] Service role key verification:', {
+      hasKey: !!supabaseServiceKey,
+      keyLength: supabaseServiceKey?.length || 0,
+      keyPreview: supabaseServiceKey ? supabaseServiceKey.substring(0, 30) + '...' : 'MISSING',
+      supabaseUrl: supabaseUrl
+    });
+    
+    // Try has_role RPC function first
+    let isAdmin = false;
+    let roleError: any = null;
+    
+    try {
+      console.log('[AUTH] Attempting has_role RPC call...');
+      const rpcResult = await supabaseAuth.rpc('has_role', { 
+        _user_id: user.id, 
+        _role: 'admin' 
       });
-      return new Response(JSON.stringify({ 
-        error: 'Failed to verify admin role',
-        details: roleError.message || 'Database query failed',
-        errorCode: roleError.code || 'unknown',
-        hint: roleError.hint || 'Check database permissions and RLS policies'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      
+      console.log('[AUTH] RPC result:', {
+        data: rpcResult.data,
+        hasError: !!rpcResult.error,
+        errorMessage: rpcResult.error?.message,
+        errorCode: rpcResult.error?.code
       });
+      
+      isAdmin = rpcResult.data === true;
+      roleError = rpcResult.error;
+      
+      if (roleError) {
+        console.error('[AUTH] RPC has_role failed:', {
+          message: roleError.message,
+          code: roleError.code,
+          details: roleError.details,
+          hint: roleError.hint
+        });
+      } else {
+        console.log('[AUTH] Admin check via RPC successful:', isAdmin);
+      }
+    } catch (rpcException) {
+      console.error('[AUTH] RPC exception:', {
+        error: rpcException instanceof Error ? rpcException.message : String(rpcException),
+        stack: rpcException instanceof Error ? rpcException.stack : undefined
+      });
+      roleError = rpcException;
+    }
+    
+    // Fallback: Direct query if RPC fails (service role bypasses RLS)
+    if (roleError || isAdmin === null || isAdmin === undefined) {
+      console.log('[AUTH] Falling back to direct user_roles query with service role');
+      
+      const { data: roleData, error: queryError } = await supabaseAuth
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      console.log('[AUTH] Direct query result:', {
+        data: roleData,
+        hasError: !!queryError,
+        errorMessage: queryError?.message,
+        errorCode: queryError?.code
+      });
+      
+      if (queryError) {
+        console.error('[AUTH ERROR] Both RPC and direct query failed:', {
+          rpcError: roleError?.message || roleError,
+          queryError: queryError.message,
+          queryCode: queryError.code,
+          queryDetails: queryError.details,
+          queryHint: queryError.hint
+        });
+        
+        // Check if it's a permission error - likely service role key issue
+        if (queryError.code === '42501' || queryError.message?.includes('permission denied')) {
+          return new Response(JSON.stringify({ 
+            error: 'Permission denied - Service role key issue',
+            details: `Both RPC and direct query failed with "permission denied for schema public" (code: 42501). This indicates SUPABASE_SERVICE_ROLE_KEY is either missing, incorrect, or the key does not have proper permissions.`,
+            errorCode: queryError.code || '42501',
+            hint: 'CRITICAL: Set SUPABASE_SERVICE_ROLE_KEY in Supabase Dashboard → Edge Functions → Settings → Secrets. Get the key from Dashboard → Settings → API → service_role key. Note: Supabase may require the secret name WITHOUT the SUPABASE_ prefix - try both "SUPABASE_SERVICE_ROLE_KEY" and "SERVICE_ROLE_KEY".'
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        return new Response(JSON.stringify({ 
+          error: 'Failed to verify admin role',
+          details: `RPC error: ${roleError?.message || 'unknown'}, Query error: ${queryError.message}`,
+          errorCode: queryError.code || 'unknown',
+          hint: 'Check SUPABASE_SERVICE_ROLE_KEY is set correctly in Edge Function environment variables'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      isAdmin = !!roleData;
+      console.log('[AUTH] Admin check via direct query:', isAdmin);
     }
 
-    if (!roleData) {
+    if (!isAdmin) {
       console.warn('[AUTH] User does not have admin role:', user.id);
       return new Response(JSON.stringify({ 
         error: 'Admin access required',

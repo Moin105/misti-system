@@ -497,7 +497,7 @@ const ProductsManager = () => {
       short_description: formData.short_description || null,
       description: formData.description || null,
       base_price: parseFloat(formData.base_price),
-      category_id: formData.category_id,
+      category_id: formData.category_id && formData.category_id.trim() !== '' ? formData.category_id : null,
       badge_text: formData.badge_text || null,
       trust_score: parseFloat(formData.trust_score),
       total_reviews: parseInt(formData.total_reviews),

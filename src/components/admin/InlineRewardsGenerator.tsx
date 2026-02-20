@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,10 +31,18 @@ export const InlineRewardsGenerator = ({ productId, productName }: InlineRewards
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const justDeletedRef = useRef(false);
 
   useEffect(() => {
-    if (productId) {
+    if (productId && !justDeletedRef.current) {
       fetchExistingReward();
+    }
+    // Reset the flag after a short delay
+    if (justDeletedRef.current) {
+      const timer = setTimeout(() => {
+        justDeletedRef.current = false;
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [productId]);
 
@@ -108,20 +116,39 @@ export const InlineRewardsGenerator = ({ productId, productName }: InlineRewards
     if (!existingReward) return;
     
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase
+    
+    // Optimistically update UI
+    setExistingReward({
+      ...existingReward,
+      is_approved: true,
+      approved_at: new Date().toISOString(),
+      approved_by: user?.id || null,
+    });
+    
+    const { data, error } = await supabase
       .from('product_rewards')
       .update({
         is_approved: true,
         approved_at: new Date().toISOString(),
         approved_by: user?.id,
       })
-      .eq('id', existingReward.id);
+      .eq('id', existingReward.id)
+      .select()
+      .single();
 
     if (error) {
-      toast.error('Failed to approve reward');
+      console.error('Approve error:', error);
+      toast.error(`Failed to approve reward: ${error.message || error.code || 'Unknown error'}`);
+      // Revert optimistic update and refetch
+      await fetchExistingReward();
     } else {
       toast.success('Reward approved and published');
-      await fetchExistingReward();
+      // Update with fresh data from server
+      if (data) {
+        setExistingReward(data);
+      } else {
+        await fetchExistingReward();
+      }
     }
   };
 
@@ -145,17 +172,29 @@ export const InlineRewardsGenerator = ({ productId, productName }: InlineRewards
   const handleDelete = async () => {
     if (!existingReward || !confirm('Are you sure you want to delete this reward?')) return;
     
+    const rewardIdToDelete = existingReward.id;
+    
+    // Set flag to prevent immediate refetch
+    justDeletedRef.current = true;
+    
+    // Optimistically clear the reward from UI
+    setExistingReward(null);
+    setIsEditing(false);
+    
     const { error } = await supabase
       .from('product_rewards')
       .delete()
-      .eq('id', existingReward.id);
+      .eq('id', rewardIdToDelete);
 
     if (error) {
-      toast.error('Failed to delete reward');
+      console.error('Delete error:', error);
+      toast.error(`Failed to delete reward: ${error.message || error.code || 'Unknown error'}`);
+      // Refetch to restore the reward if delete failed
+      justDeletedRef.current = false;
+      await fetchExistingReward();
     } else {
-      toast.success('Reward deleted');
-      setExistingReward(null);
-      setIsEditing(false);
+      toast.success('Reward deleted successfully');
+      // Don't refetch - the reward is deleted and UI is already cleared
     }
   };
 

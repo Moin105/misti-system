@@ -41,7 +41,14 @@
     "check-games-structure": "tsx scripts/check-games-table-structure.ts",
     "check-deleted-urls-constraints": "tsx scripts/check-deleted-urls-constraints.ts",
     "check-storage-policies": "tsx scripts/check-storage-policies.ts",
-    "fix-old-project-id-urls": "tsx scripts/fix-old-project-id-urls.ts"
+    "fix-old-project-id-urls": "tsx scripts/fix-old-project-id-urls.ts",
+    "grant-has-role-permissions": "tsx scripts/grant-has-role-permissions.ts",
+    "test-generate-product-fields": "tsx scripts/test-generate-product-fields.ts",
+    "test-service-role-key": "tsx scripts/test-service-role-key-direct.ts",
+    "fix-db-permissions": "tsx scripts/fix-database-permissions-complete.ts",
+    "apply-edge-function-permissions": "supabase db push",
+    "check-product-rewards-policies": "tsx scripts/check-product-rewards-policies.ts",
+    "fix-product-faqs-id": "tsx scripts/fix-product-faqs-id-default.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

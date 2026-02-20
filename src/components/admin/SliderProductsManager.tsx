@@ -246,7 +246,7 @@ const SliderProductsManager = () => {
       short_description: formData.short_description,
       how_it_works: formData.how_it_works || null,
       requirements: formData.requirements || null,
-      category_id: formData.category_id,
+      category_id: formData.category_id && formData.category_id.trim() !== '' ? formData.category_id : null,
       base_price: Number(formData.base_price),
       is_active: formData.is_active,
       is_slider_product: true,
