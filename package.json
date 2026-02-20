@@ -38,7 +38,10 @@
     "cleanup-duplicate-roles": "tsx scripts/cleanup-duplicate-roles.ts",
     "verify-foreign-keys": "tsx scripts/verify-foreign-keys.ts",
     "check-games-permissions": "tsx scripts/check-games-permissions.ts",
-    "check-games-structure": "tsx scripts/check-games-table-structure.ts"
+    "check-games-structure": "tsx scripts/check-games-table-structure.ts",
+    "check-deleted-urls-constraints": "tsx scripts/check-deleted-urls-constraints.ts",
+    "check-storage-policies": "tsx scripts/check-storage-policies.ts",
+    "fix-old-project-id-urls": "tsx scripts/fix-old-project-id-urls.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -499,9 +499,11 @@ const ProductDetail = () => {
           
           // For 4+ items, use 2 or 3 columns based on label length
           const labels = isButtonNewFormat 
-            ? buttonGroupOptions.map((o: any) => o.label || '') 
-            : buttonGroupOptions;
-          const avgLength = labels.reduce((sum: number, l: string) => sum + l.length, 0) / labels.length;
+            ? (Array.isArray(buttonGroupOptions) ? buttonGroupOptions.map((o: any) => o.label || '') : [])
+            : (Array.isArray(buttonGroupOptions) ? buttonGroupOptions : []);
+          const avgLength = labels.length > 0 
+            ? labels.reduce((sum: number, l: string) => sum + l.length, 0) / labels.length 
+            : 0;
           
           if (avgLength > 12 || count > 6) return 'grid-cols-2';
           return 'grid-cols-3';

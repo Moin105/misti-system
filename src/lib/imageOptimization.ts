@@ -22,6 +22,13 @@ export const getOptimizedImageUrl = (
 ): string => {
   if (!url) return '';
   
+  // Replace old project ID with new one if present
+  const OLD_PROJECT_ID = 'kdjlhibxxygfdmlvdfcl';
+  const NEW_PROJECT_ID = 'sclvjrnnnbbptnhonoks';
+  if (url.includes(OLD_PROJECT_ID)) {
+    url = url.replace(new RegExp(OLD_PROJECT_ID, 'g'), NEW_PROJECT_ID);
+  }
+  
   // Only transform Supabase storage URLs
   if (!url.includes('supabase.co/storage/v1/object/public/')) {
     return url;

@@ -34,10 +34,28 @@ serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 
+      'https://sclvjrnnnbbptnhonoks.supabase.co';
+    
+    // Try to get anon key from env, fallback to hardcoded (for Edge Functions)
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || 
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjbHZqcm5ubmJicHRuaG9ub2tzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjk3MjEsImV4cCI6MjA4Njg0NTcyMX0.YK_RfC9JiclVdReaRK05-F1xMvjZtvJKzjrml-AkWbM';
+    
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    
+    // Support both OpenAI and Lovable AI
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const aiProvider = openaiApiKey ? 'openai' : (lovableApiKey ? 'lovable' : null);
+
+    if (!supabaseServiceKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!firecrawlApiKey) {
       console.error('FIRECRAWL_API_KEY not configured');
@@ -47,28 +65,40 @@ serve(async (req) => {
       });
     }
 
-    if (!lovableApiKey) {
-      console.error('LOVABLE_API_KEY not configured');
-      return new Response(JSON.stringify({ error: 'Lovable AI not configured' }), {
+    if (!aiProvider) {
+      console.error('Neither OPENAI_API_KEY nor LOVABLE_API_KEY configured');
+      return new Response(JSON.stringify({ error: 'AI provider not configured. Please set OPENAI_API_KEY or LOVABLE_API_KEY' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify admin role
+    // Extract token from Authorization header
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    // Create service role client for auth verification (same pattern as verify-payment)
+    const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    });
+
+    // Verify user is authenticated using token directly
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+      console.error('Auth error:', userError?.message);
+      console.error('Token preview:', token.substring(0, 20) + '...');
+      return new Response(JSON.stringify({ 
+        error: 'Invalid JWT', 
+        details: userError?.message || 'User authentication failed',
+        hint: 'Token verification failed. Make sure you are logged in and token is valid.'
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { data: roleData } = await supabase
+    // Check admin role (using same service role client)
+    const { data: roleData } = await supabaseAuth
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -133,7 +163,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Step 2: Generating original content with AI');
+    console.log(`Step 2: Generating original content with AI (Provider: ${aiProvider})`);
 
     // Build the AI prompt based on product type
     let productTypeInstructions = '';
@@ -227,20 +257,43 @@ Generate a complete product listing in the following JSON format:
 
 IMPORTANT: NO EMOJIS anywhere. Return ONLY the JSON object, no markdown formatting.`;
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-      }),
-    });
+    // Use OpenAI or Lovable AI based on available keys
+    let aiResponse;
+    if (aiProvider === 'openai') {
+      console.log('Using OpenAI API');
+      aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o', // or 'gpt-4-turbo' or 'gpt-3.5-turbo'
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 4000,
+        }),
+      });
+    } else {
+      console.log('Using Lovable AI API');
+      aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+        }),
+      });
+    }
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
