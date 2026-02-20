@@ -8,14 +8,25 @@ interface OptimizeOptions {
   quality?: number;
   format?: 'origin' | 'webp';
   resize?: 'cover' | 'contain' | 'fill';
+  useTransformation?: boolean; // Option to disable transformation
 }
+
+// Check if image transformation is enabled
+// Disabled by default due to 400 errors - can be enabled via localStorage
+const IMAGE_TRANSFORMATION_ENABLED = 
+  typeof window !== 'undefined' 
+    ? window.localStorage.getItem('enable-image-transformation') === 'true'
+    : false; // Disabled by default until Supabase transformation API is configured
 
 /**
  * Transform a Supabase Storage public URL to use the image transformation API.
- * Returns the original URL if it's not a valid Supabase storage URL.
+ * Returns the original URL if transformation is disabled or not a valid Supabase storage URL.
  * 
  * Note: Supabase only supports width, height, quality, and format params.
  * The aspect ratio is maintained by default (fit to dimensions).
+ * 
+ * If transformation fails (400 errors), disable it via localStorage:
+ * localStorage.setItem('disable-image-transformation', 'true')
  */
 export const getOptimizedImageUrl = (
   url: string | null | undefined,
@@ -34,6 +45,12 @@ export const getOptimizedImageUrl = (
   // Don't re-transform URLs that are already using render/image
   if (url.includes('/storage/v1/render/image/')) {
     return url;
+  }
+  
+  // Check if transformation is disabled
+  const useTransformation = options.useTransformation !== false && IMAGE_TRANSFORMATION_ENABLED;
+  if (!useTransformation) {
+    return url; // Return original URL without transformation
   }
   
   try {

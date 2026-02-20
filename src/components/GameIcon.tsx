@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { getOptimizedIconUrl } from "@/lib/imageOptimization";
 
 /**
@@ -42,10 +42,14 @@ const GameIcon = memo(({
   }
 
   const optimizedSrc = getOptimizedIconUrl(src, size);
+  const [imageError, setImageError] = useState(false);
+  
+  // Fallback to original URL if optimized URL fails
+  const displaySrc = imageError ? src : optimizedSrc;
 
   return (
     <img 
-      src={optimizedSrc}
+      src={displaySrc}
       alt={alt}
       width={size}
       height={size}
@@ -53,6 +57,23 @@ const GameIcon = memo(({
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
       decoding="async"
+      onError={() => {
+        // If optimized URL fails, try original URL
+        if (!imageError && optimizedSrc !== src) {
+          setImageError(true);
+          // Disable transformation globally if it consistently fails
+          if (typeof window !== 'undefined') {
+            console.warn('Image transformation failed, falling back to original URL');
+            // Optionally disable transformation after multiple failures
+            const failureCount = parseInt(localStorage.getItem('image-transformation-failures') || '0') + 1;
+            localStorage.setItem('image-transformation-failures', String(failureCount));
+            if (failureCount >= 3) {
+              localStorage.setItem('disable-image-transformation', 'true');
+              console.warn('Image transformation disabled due to repeated failures');
+            }
+          }
+        }
+      }}
     />
   );
 });
