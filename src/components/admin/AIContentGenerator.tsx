@@ -141,29 +141,107 @@ export const AIContentGenerator = ({
         hasError: !!response.error,
         hasData: !!response.data,
         error: response.error,
+        errorStringified: JSON.stringify(response.error, null, 2),
         data: response.data
       });
 
       if (response.error) {
-        // Extract detailed error information from the response
-        const errorDetails = (response.error as any)?.context?.body || response.error;
-        const errorMessage = errorDetails?.details || errorDetails?.message || response.error.message || 'Failed to generate content';
-        const errorHint = errorDetails?.hint || '';
-        const errorCode = errorDetails?.errorCode || errorDetails?.code || '';
-        const fullError = errorDetails?.fullError || '';
+        // Supabase client wraps errors - extract actual error details
+        const errorObj = response.error as any;
         
-        console.error('[AIContentGenerator] Detailed error:', {
-          message: errorMessage,
-          hint: errorHint,
-          code: errorCode,
-          fullError: fullError,
-          originalError: response.error
+        // Log FULL error structure first for debugging
+        console.error('[AIContentGenerator] ===== FULL ERROR OBJECT =====');
+        console.error('Error object:', errorObj);
+        console.error('Error keys:', Object.keys(errorObj || {}));
+        console.error('Error type:', typeof errorObj);
+        console.error('Error stringified:', JSON.stringify(errorObj, null, 2));
+        console.error('Error.context:', errorObj.context);
+        console.error('Error.context.body:', errorObj.context?.body);
+        console.error('Error.context.response:', errorObj.context?.response);
+        console.error('Error.message:', errorObj.message);
+        console.error('Error.name:', errorObj.name);
+        console.error('Error.status:', errorObj.status);
+        console.error('==========================================');
+        
+        // Try multiple ways to extract error details
+        let errorMessage = 'Failed to generate content';
+        let errorHint = '';
+        let errorCode = '';
+        let fullErrorDetails: any = null;
+        
+        // Method 1: Check context.response.body (most common for HTTP errors)
+        if (errorObj.context?.response?.body) {
+          try {
+            const body = typeof errorObj.context.response.body === 'string' 
+              ? JSON.parse(errorObj.context.response.body) 
+              : errorObj.context.response.body;
+            fullErrorDetails = body;
+            errorMessage = body.details || body.message || body.error || errorMessage;
+            errorHint = body.hint || '';
+            errorCode = body.errorCode || body.code || body.status || '';
+            console.log('[AIContentGenerator] Extracted from context.response.body:', { errorMessage, errorHint, errorCode });
+          } catch (e) {
+            console.error('[AIContentGenerator] Failed to parse context.response.body:', e);
+          }
+        }
+        
+        // Method 2: Check context.body (alternative location)
+        if (!fullErrorDetails && errorObj.context?.body) {
+          try {
+            const body = typeof errorObj.context.body === 'string' 
+              ? JSON.parse(errorObj.context.body) 
+              : errorObj.context.body;
+            fullErrorDetails = body;
+            errorMessage = body.details || body.message || body.error || errorMessage;
+            errorHint = body.hint || '';
+            errorCode = body.errorCode || body.code || body.status || '';
+            console.log('[AIContentGenerator] Extracted from context.body:', { errorMessage, errorHint, errorCode });
+          } catch (e) {
+            console.error('[AIContentGenerator] Failed to parse context.body:', e);
+          }
+        }
+        
+        // Method 3: Check error.message (might contain JSON)
+        if (!fullErrorDetails && errorObj.message) {
+          errorMessage = errorObj.message;
+          // Try to parse if it's JSON
+          try {
+            const parsed = JSON.parse(errorObj.message);
+            fullErrorDetails = parsed;
+            errorMessage = parsed.details || parsed.message || parsed.error || errorMessage;
+            errorHint = parsed.hint || '';
+            errorCode = parsed.errorCode || parsed.code || '';
+            console.log('[AIContentGenerator] Extracted from parsed error.message:', { errorMessage, errorHint, errorCode });
+          } catch {
+            // Not JSON, use as is
+            console.log('[AIContentGenerator] error.message is not JSON, using as-is:', errorMessage);
+          }
+        }
+        
+        // Method 4: Check if error is a string
+        if (!fullErrorDetails && typeof errorObj === 'string') {
+          errorMessage = errorObj;
+          console.log('[AIContentGenerator] Error is a string:', errorMessage);
+        }
+        
+        // Build display message with all available info
+        let displayMessage = errorMessage;
+        if (errorHint) {
+          displayMessage += `\n\n💡 ${errorHint}`;
+        }
+        if (errorCode) {
+          displayMessage += `\n\nCode: ${errorCode}`;
+        }
+        if (fullErrorDetails) {
+          displayMessage += `\n\nFull details: ${JSON.stringify(fullErrorDetails, null, 2)}`;
+        }
+        
+        console.error('[AIContentGenerator] Final extracted error:', {
+          errorMessage,
+          errorHint,
+          errorCode,
+          displayMessage
         });
-        
-        // Show detailed error message
-        const displayMessage = errorHint 
-          ? `${errorMessage}\n\n💡 ${errorHint}` 
-          : errorMessage;
         
         throw new Error(displayMessage);
       }
