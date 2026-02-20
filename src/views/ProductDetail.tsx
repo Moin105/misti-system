@@ -54,6 +54,7 @@ import { useProductExtras } from "@/hooks/useProductExtras";
 import { useGameWithCategories } from "@/hooks/useGameData";
 import { supabase } from "@/integrations/supabase/client";
 import { getOptimizedCoverUrl } from "@/lib/imageOptimization";
+import { fixSupabaseUrl } from "@/lib/urlUtils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -230,14 +231,15 @@ const ProductDetail = () => {
   // OPTIMIZED: Preload LCP image for faster paint
   useEffect(() => {
     if (product?.image_url) {
+      const fixedUrl = fixSupabaseUrl(product.image_url);
       // Check if preload link already exists
-      const existingLink = document.querySelector(`link[rel="preload"][href="${product.image_url}"]`);
+      const existingLink = document.querySelector(`link[rel="preload"][href="${fixedUrl}"]`);
       if (existingLink) return;
       
       const link = document.createElement('link');
       link.rel = 'preload';
       link.as = 'image';
-      link.href = product.image_url;
+      link.href = fixedUrl;
       link.fetchPriority = 'high';
       document.head.appendChild(link);
       
@@ -482,11 +484,17 @@ const ProductDetail = () => {
         );
 
       case "button_group":
-        const buttonGroupOptions = (option.options as any) || [];
+        // Ensure buttonGroupOptions is always an array
+        const rawOptions = option.options as any;
+        const buttonGroupOptions = Array.isArray(rawOptions) ? rawOptions : (rawOptions ? [rawOptions] : []);
         const isButtonNewFormat =
-          Array.isArray(buttonGroupOptions) &&
           buttonGroupOptions.length > 0 &&
           typeof buttonGroupOptions[0] === "object";
+        
+        // Early return if no options
+        if (buttonGroupOptions.length === 0) {
+          return <div className="text-sm text-muted-foreground">No options available</div>;
+        }
         
         // Calculate grid columns based on option count and label length
         const getGridCols = () => {
@@ -499,8 +507,8 @@ const ProductDetail = () => {
           
           // For 4+ items, use 2 or 3 columns based on label length
           const labels = isButtonNewFormat 
-            ? (Array.isArray(buttonGroupOptions) ? buttonGroupOptions.map((o: any) => o.label || '') : [])
-            : (Array.isArray(buttonGroupOptions) ? buttonGroupOptions : []);
+            ? buttonGroupOptions.map((o: any) => o.label || '')
+            : buttonGroupOptions.map((o: string) => String(o));
           const avgLength = labels.length > 0 
             ? labels.reduce((sum: number, l: string) => sum + l.length, 0) / labels.length 
             : 0;
@@ -517,7 +525,7 @@ const ProductDetail = () => {
                   const displayPrice = parseFloat(opt.price);
                   return (
                     <button
-                      key={opt.label}
+                      key={opt.label || index}
                       type="button"
                       onClick={() => handleOptionChange(option.name, opt.label)}
                       className={`w-full px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg text-center ${
@@ -532,7 +540,7 @@ const ProductDetail = () => {
                 })
               : buttonGroupOptions.map((opt: string, index: number) => (
                   <button
-                    key={opt}
+                    key={String(opt) || index}
                     type="button"
                     onClick={() => handleOptionChange(option.name, opt)}
                     className={`w-full px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg text-center ${
@@ -621,7 +629,7 @@ const ProductDetail = () => {
             product.meta_description ||
             product.short_description ||
             `Professional ${product.name} service for ${game.name}`,
-          image: product.og_image || product.image_url || "https://misti.services/logo.png",
+          image: fixSupabaseUrl(product.og_image || product.image_url) || "https://misti.services/logo.png",
           brand: {
             "@type": "Organization",
             name: "misti.services",
@@ -716,7 +724,7 @@ const ProductDetail = () => {
         title={hasFullData ? (product.meta_title || `${product.name} - ${category.name} | ${game.name} | misti.services`) : createFallbackTitle()}
         description={hasFullData ? (product.meta_description || createMetaDescription()) : createFallbackDescription()}
         canonical={getFallbackCanonical()}
-        ogImage={hasFullData ? (product.og_image || product.image_url || game.image_url || undefined) : undefined}
+        ogImage={hasFullData ? fixSupabaseUrl(product.og_image || product.image_url || game.image_url) || undefined : undefined}
         keywords={hasFullData ? (product.meta_keywords || `${game.name}, ${category.name}, ${product.name}, boost, gaming services`) : undefined}
         structuredData={hasFullData ? buildStructuredData() : undefined}
       />
@@ -763,7 +771,7 @@ const ProductDetail = () => {
               {/* Game hero image */}
               {game.hero_image_url && (
                 <img 
-                  src={getOptimizedCoverUrl(game.hero_image_url, 1920, 600)} 
+                  src={getOptimizedCoverUrl(fixSupabaseUrl(game.hero_image_url), 1920, 600)} 
                   alt=""
                   className={`absolute inset-0 w-full h-full object-cover opacity-20 ${
                     game.hero_image_position === 'top' ? 'object-top' :
@@ -1096,7 +1104,7 @@ const ProductDetail = () => {
                               return await addToCart({
                                 product_id: product.id,
                                 product_name: product.name,
-                                product_image: product.image_url,
+                                product_image: fixSupabaseUrl(product.image_url),
                                 quantity: 1,
                                 base_price: product.base_price,
                                 selected_options: configOptions,
@@ -1133,7 +1141,7 @@ const ProductDetail = () => {
                               return await addToCart({
                                 product_id: product.id,
                                 product_name: product.name,
-                                product_image: product.image_url,
+                                product_image: fixSupabaseUrl(product.image_url),
                                 quantity: 1,
                                 base_price: product.base_price,
                                 selected_options: configOptions,
@@ -1256,7 +1264,7 @@ const ProductDetail = () => {
                               await addToCart({
                                 product_id: product.id,
                                 product_name: product.name,
-                                product_image: product.image_url,
+                                product_image: fixSupabaseUrl(product.image_url),
                                 quantity: 1,
                                 base_price: product.base_price,
                                 selected_options: selectedOptions,

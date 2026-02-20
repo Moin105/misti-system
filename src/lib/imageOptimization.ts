@@ -1,5 +1,6 @@
 // Image optimization utility for Supabase storage
 // Uses Supabase's image transformation API for on-the-fly resizing
+import { fixSupabaseUrl } from './urlUtils';
 
 interface OptimizeOptions {
   width?: number;
@@ -22,12 +23,8 @@ export const getOptimizedImageUrl = (
 ): string => {
   if (!url) return '';
   
-  // Replace old project ID with new one if present
-  const OLD_PROJECT_ID = 'kdjlhibxxygfdmlvdfcl';
-  const NEW_PROJECT_ID = 'sclvjrnnnbbptnhonoks';
-  if (url.includes(OLD_PROJECT_ID)) {
-    url = url.replace(new RegExp(OLD_PROJECT_ID, 'g'), NEW_PROJECT_ID);
-  }
+  // Fix old project ID first
+  url = fixSupabaseUrl(url);
   
   // Only transform Supabase storage URLs
   if (!url.includes('supabase.co/storage/v1/object/public/')) {
