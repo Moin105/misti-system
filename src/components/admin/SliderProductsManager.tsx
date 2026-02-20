@@ -319,6 +319,7 @@ const SliderProductsManager = () => {
     setEditingProduct(product);
     const category = categories.find(c => c.id === product.category_id);
     const productAny = product as any;
+    const config = product.slider_config;
     setFormData({
       name: product.name,
       slug: product.slug,
@@ -328,18 +329,18 @@ const SliderProductsManager = () => {
       requirements: productAny.requirements || "",
       game_id: category?.game_id || "",
       category_id: product.category_id,
-      base_price: product.base_price.toString(),
+      base_price: (product.base_price ?? 0).toString(),
       is_active: product.is_active,
       image_url: product.image_url || "",
-      slider_min: product.slider_config?.min_value.toString() || "1",
-      slider_max: product.slider_config?.max_value.toString() || "60",
-      slider_step: product.slider_config?.step.toString() || "1",
-      slider_default_start: product.slider_config?.default_start.toString() || "1",
-      slider_default_end: product.slider_config?.default_end.toString() || "60",
-      slider_start_label: product.slider_config?.start_label || "Start Value",
-      slider_end_label: product.slider_config?.end_label || "End Value",
-      slider_price_per_step: product.slider_config?.price_per_step?.toString() || "10",
-      slider_time_per_step: product.slider_config?.estimated_time_per_step.toString() || "0.5",
+      slider_min: (config?.min_value ?? 1).toString(),
+      slider_max: (config?.max_value ?? 60).toString(),
+      slider_step: (config?.step ?? 1).toString(),
+      slider_default_start: (config?.default_start ?? 1).toString(),
+      slider_default_end: (config?.default_end ?? 60).toString(),
+      slider_start_label: config?.start_label || "Start Value",
+      slider_end_label: config?.end_label || "End Value",
+      slider_price_per_step: (config?.price_per_step ?? 10).toString(),
+      slider_time_per_step: (config?.estimated_time_per_step ?? 0.5).toString(),
       start_time_text: productAny.start_time_text || "15 minutes",
       start_time_value: productAny.start_time_value || "average start time",
       delivery_text: productAny.delivery_text || "Flexible",
@@ -565,7 +566,7 @@ const SliderProductsManager = () => {
                 existingProduct={editingProduct ? {
                   name: editingProduct.name,
                   slug: editingProduct.slug,
-                  base_price: editingProduct.base_price?.toString() || '',
+                  base_price: (editingProduct.base_price ?? 0).toString(),
                 } : undefined}
               />
 

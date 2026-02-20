@@ -321,17 +321,17 @@ const SingleEndpointSliderManager = () => {
       requirements: productAny.requirements || "",
       game_id: category?.game_id || "",
       category_id: product.category_id,
-      base_price: product.base_price.toString(),
+      base_price: (product.base_price ?? 0).toString(),
       is_active: product.is_active,
       image_url: product.image_url || "",
-      slider_min: config?.min_value.toString() || "1",
-      slider_max: config?.max_value.toString() || "100",
-      slider_step: config?.step.toString() || "1",
-      slider_default_value: config?.default_value?.toString() || "50",
+      slider_min: (config?.min_value ?? 1).toString(),
+      slider_max: (config?.max_value ?? 100).toString(),
+      slider_step: (config?.step ?? 1).toString(),
+      slider_default_value: (config?.default_value ?? 50).toString(),
       slider_value_label: config?.value_label || "Level",
       slider_price_label: config?.price_label || "",
-      slider_price_per_step: config?.price_per_step?.toString() || "10",
-      slider_time_per_step: config?.estimated_time_per_step.toString() || "0.5",
+      slider_price_per_step: (config?.price_per_step ?? 10).toString(),
+      slider_time_per_step: (config?.estimated_time_per_step ?? 0.5).toString(),
       // SEO fields
       meta_title: productAny.meta_title || "",
       meta_description: productAny.meta_description || "",
@@ -554,7 +554,7 @@ const SingleEndpointSliderManager = () => {
                 existingProduct={editingProduct ? {
                   name: editingProduct.name,
                   slug: editingProduct.slug,
-                  base_price: editingProduct.base_price?.toString() || '',
+                  base_price: (editingProduct.base_price ?? 0).toString(),
                 } : undefined}
               />
 

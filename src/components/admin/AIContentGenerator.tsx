@@ -105,17 +105,87 @@ export const AIContentGenerator = ({
     setIsGenerating(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get fresh session and ensure it's valid
+      let { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (!session) {
+      if (sessionError) {
+        console.error('[AIContentGenerator] Session error:', sessionError);
         toast({
           title: "Error",
-          description: "You must be logged in",
+          description: "Session error. Please log in again.",
           variant: "destructive",
         });
         setIsGenerating(false);
         return;
       }
+      
+      // If no session, try to refresh
+      if (!session) {
+        console.log('[AIContentGenerator] No session, attempting refresh...');
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          console.error('[AIContentGenerator] Refresh failed:', refreshError);
+          toast({
+            title: "Error",
+            description: "You must be logged in. Please log in again.",
+            variant: "destructive",
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
+        session = refreshedSession;
+      }
+      
+      // Check if token is expired or about to expire (within 1 minute)
+      const now = Math.floor(Date.now() / 1000);
+      const expiresAt = session.expires_at || 0;
+      const timeUntilExpiry = expiresAt - now;
+      
+      // If token expires in less than 1 minute, refresh it
+      if (timeUntilExpiry < 60) {
+        console.log('[AIContentGenerator] Token expiring soon, refreshing...', {
+          expiresIn: timeUntilExpiry,
+          expiresAt: new Date(expiresAt * 1000).toISOString()
+        });
+        
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          console.error('[AIContentGenerator] Token refresh failed:', refreshError);
+          toast({
+            title: "Error",
+            description: "Session expired. Please log in again.",
+            variant: "destructive",
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
+        session = refreshedSession;
+      }
+      
+      // Verify session is valid
+      if (!session || !session.access_token) {
+        console.error('[AIContentGenerator] Invalid session - no access token');
+        toast({
+          title: "Error",
+          description: "Invalid session. Please log in again.",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+        return;
+      }
+      
+      console.log('[AIContentGenerator] Session verified:', {
+        userId: session.user.id,
+        email: session.user.email,
+        tokenExpiresAt: new Date(session.expires_at! * 1000).toISOString(),
+        expiresIn: Math.floor((session.expires_at! - now)),
+        tokenLength: session.access_token.length,
+        tokenPreview: session.access_token.substring(0, 20) + '...'
+      });
 
       console.log('[AIContentGenerator] Calling Edge Function with:', {
         gameId: safeGameId,
@@ -124,6 +194,7 @@ export const AIContentGenerator = ({
         sourceUrl: sourceUrl.trim().substring(0, 50) + '...'
       });
 
+      // Call Edge Function - Supabase client will automatically add Authorization header
       const response = await supabase.functions.invoke('generate-product-fields', {
         body: {
           sourceUrl: sourceUrl.trim(),
@@ -152,16 +223,9 @@ export const AIContentGenerator = ({
         // Log FULL error structure first for debugging
         console.error('[AIContentGenerator] ===== FULL ERROR OBJECT =====');
         console.error('Error object:', errorObj);
-        console.error('Error keys:', Object.keys(errorObj || {}));
-        console.error('Error type:', typeof errorObj);
-        console.error('Error stringified:', JSON.stringify(errorObj, null, 2));
         console.error('Error.context:', errorObj.context);
-        console.error('Error.context.body:', errorObj.context?.body);
-        console.error('Error.context.response:', errorObj.context?.response);
-        console.error('Error.message:', errorObj.message);
-        console.error('Error.name:', errorObj.name);
-        console.error('Error.status:', errorObj.status);
-        console.error('==========================================');
+        console.error('Error.context.body type:', typeof errorObj.context?.body);
+        console.error('Error.context.body is ReadableStream:', errorObj.context?.body instanceof ReadableStream);
         
         // Try multiple ways to extract error details
         let errorMessage = 'Failed to generate content';
@@ -169,24 +233,80 @@ export const AIContentGenerator = ({
         let errorCode = '';
         let fullErrorDetails: any = null;
         
-        // Method 1: Check context.response.body (most common for HTTP errors)
-        if (errorObj.context?.response?.body) {
+        // Method 1: Read response body from context (which is a Response object)
+        if (errorObj.context && typeof errorObj.context.text === 'function') {
           try {
-            const body = typeof errorObj.context.response.body === 'string' 
-              ? JSON.parse(errorObj.context.response.body) 
-              : errorObj.context.response.body;
-            fullErrorDetails = body;
-            errorMessage = body.details || body.message || body.error || errorMessage;
-            errorHint = body.hint || '';
-            errorCode = body.errorCode || body.code || body.status || '';
-            console.log('[AIContentGenerator] Extracted from context.response.body:', { errorMessage, errorHint, errorCode });
-          } catch (e) {
-            console.error('[AIContentGenerator] Failed to parse context.response.body:', e);
+            const bodyText = await errorObj.context.text();
+            console.log('[AIContentGenerator] Read response body text:', bodyText);
+            
+            try {
+              const body = JSON.parse(bodyText);
+              fullErrorDetails = body;
+              errorMessage = body.details || body.message || body.error || errorMessage;
+              errorHint = body.hint || '';
+              errorCode = body.errorCode || body.code || body.status || '';
+              console.log('[AIContentGenerator] Extracted from context.text():', { errorMessage, errorHint, errorCode });
+            } catch (parseError) {
+              console.error('[AIContentGenerator] Failed to parse body as JSON:', parseError);
+              errorMessage = bodyText || errorMessage;
+            }
+          } catch (textError) {
+            console.error('[AIContentGenerator] Failed to read context.text():', textError);
           }
         }
         
-        // Method 2: Check context.body (alternative location)
-        if (!fullErrorDetails && errorObj.context?.body) {
+        // Method 2: Read response body stream if it's a ReadableStream
+        if (!fullErrorDetails && errorObj.context?.body instanceof ReadableStream) {
+          try {
+            const reader = errorObj.context.body.getReader();
+            const { value, done } = await reader.read();
+            if (!done && value) {
+              const decoder = new TextDecoder();
+              const bodyText = decoder.decode(value);
+              console.log('[AIContentGenerator] Read response body stream:', bodyText);
+              
+              try {
+                const body = JSON.parse(bodyText);
+                fullErrorDetails = body;
+                errorMessage = body.details || body.message || body.error || errorMessage;
+                errorHint = body.hint || '';
+                errorCode = body.errorCode || body.code || body.status || '';
+                console.log('[AIContentGenerator] Extracted from ReadableStream body:', { errorMessage, errorHint, errorCode });
+              } catch (parseError) {
+                console.error('[AIContentGenerator] Failed to parse stream body as JSON:', parseError);
+                errorMessage = bodyText || errorMessage;
+              }
+            }
+            reader.releaseLock();
+          } catch (streamError) {
+            console.error('[AIContentGenerator] Failed to read stream:', streamError);
+          }
+        }
+        
+        // Method 3: Check context.response (if available)
+        if (!fullErrorDetails && errorObj.context?.response) {
+          try {
+            const response = errorObj.context.response;
+            if (response.body && typeof response.text === 'function') {
+              const bodyText = await response.text();
+              try {
+                const body = JSON.parse(bodyText);
+                fullErrorDetails = body;
+                errorMessage = body.details || body.message || body.error || errorMessage;
+                errorHint = body.hint || '';
+                errorCode = body.errorCode || body.code || body.status || '';
+                console.log('[AIContentGenerator] Extracted from context.response:', { errorMessage, errorHint, errorCode });
+              } catch (parseError) {
+                errorMessage = bodyText || errorMessage;
+              }
+            }
+          } catch (e) {
+            console.error('[AIContentGenerator] Failed to read context.response:', e);
+          }
+        }
+        
+        // Method 3: Check if context.body is already a string or object
+        if (!fullErrorDetails && errorObj.context?.body && !(errorObj.context.body instanceof ReadableStream)) {
           try {
             const body = typeof errorObj.context.body === 'string' 
               ? JSON.parse(errorObj.context.body) 
@@ -195,13 +315,13 @@ export const AIContentGenerator = ({
             errorMessage = body.details || body.message || body.error || errorMessage;
             errorHint = body.hint || '';
             errorCode = body.errorCode || body.code || body.status || '';
-            console.log('[AIContentGenerator] Extracted from context.body:', { errorMessage, errorHint, errorCode });
+            console.log('[AIContentGenerator] Extracted from context.body (non-stream):', { errorMessage, errorHint, errorCode });
           } catch (e) {
             console.error('[AIContentGenerator] Failed to parse context.body:', e);
           }
         }
         
-        // Method 3: Check error.message (might contain JSON)
+        // Method 4: Check error.message (might contain JSON)
         if (!fullErrorDetails && errorObj.message) {
           errorMessage = errorObj.message;
           // Try to parse if it's JSON
@@ -218,10 +338,13 @@ export const AIContentGenerator = ({
           }
         }
         
-        // Method 4: Check if error is a string
-        if (!fullErrorDetails && typeof errorObj === 'string') {
-          errorMessage = errorObj;
-          console.log('[AIContentGenerator] Error is a string:', errorMessage);
+        // Method 5: Check status code from context
+        if (errorObj.context?.status) {
+          errorCode = errorObj.context.status.toString();
+          if (!errorMessage.includes('401') && errorCode === '401') {
+            errorMessage = 'Authentication failed. Please log out and log back in.';
+            errorHint = 'Your session may have expired. Try refreshing the page or logging in again.';
+          }
         }
         
         // Build display message with all available info
@@ -230,9 +353,9 @@ export const AIContentGenerator = ({
           displayMessage += `\n\n💡 ${errorHint}`;
         }
         if (errorCode) {
-          displayMessage += `\n\nCode: ${errorCode}`;
+          displayMessage += `\n\nStatus Code: ${errorCode}`;
         }
-        if (fullErrorDetails) {
+        if (fullErrorDetails && Object.keys(fullErrorDetails).length > 0) {
           displayMessage += `\n\nFull details: ${JSON.stringify(fullErrorDetails, null, 2)}`;
         }
         
@@ -240,7 +363,8 @@ export const AIContentGenerator = ({
           errorMessage,
           errorHint,
           errorCode,
-          displayMessage
+          displayMessage,
+          statusCode: errorObj.context?.status
         });
         
         throw new Error(displayMessage);

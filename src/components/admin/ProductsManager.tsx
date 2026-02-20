@@ -647,11 +647,11 @@ const ProductsManager = () => {
       slug: product.slug,
       short_description: product.short_description || "",
       description: product.description || "",
-      base_price: product.base_price.toString(),
+      base_price: (product.base_price ?? 0).toString(),
       category_id: product.category_id,
       badge_text: product.badge_text || "",
-      trust_score: product.trust_score.toString(),
-      total_reviews: product.total_reviews.toString(),
+      trust_score: (product.trust_score ?? 0).toString(),
+      total_reviews: (product.total_reviews ?? 0).toString(),
       is_active: product.is_active,
       is_featured: product.is_featured,
       is_manually_popular: (product as any).is_manually_popular || false,
@@ -964,7 +964,7 @@ const ProductsManager = () => {
                 existingProduct={editingProduct ? {
                   name: editingProduct.name,
                   slug: editingProduct.slug,
-                  base_price: editingProduct.base_price?.toString() || '',
+                  base_price: (editingProduct.base_price ?? 0).toString(),
                 } : undefined}
               />
 
