@@ -207,10 +207,28 @@ const SingleEndpointSliderManager = () => {
           .order("name"),
       ]);
 
+      if (productsRes.error) throw productsRes.error;
+      if (categoriesRes.error) throw categoriesRes.error;
+      if (gamesRes.error) throw gamesRes.error;
+
       if (productsRes.data) {
-        const singleSliderProducts = (productsRes.data as any[]).filter(
-          p => p.slider_config?.slider_type === "single"
-        );
+        const singleSliderProducts = (productsRes.data as any[]).filter((p) => {
+          const config = p?.slider_config;
+          if (!config || typeof config !== "object") return false;
+
+          // Preferred shape: explicitly tagged single slider products.
+          if (config.slider_type === "single") return true;
+
+          // Backward compatibility: older rows may not include slider_type.
+          const hasSingleShape =
+            Object.prototype.hasOwnProperty.call(config, "default_value") ||
+            Object.prototype.hasOwnProperty.call(config, "value_label");
+          const hasMultiRangeShape =
+            Object.prototype.hasOwnProperty.call(config, "default_start") ||
+            Object.prototype.hasOwnProperty.call(config, "default_end");
+
+          return hasSingleShape && !hasMultiRangeShape;
+        });
         setProducts(singleSliderProducts);
       }
       if (categoriesRes.data) setCategories(categoriesRes.data);
