@@ -224,6 +224,11 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
+  // Cache API only supports http/https requests. Ignore browser extension schemes.
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
   // CRITICAL: Skip ALL caching for bot/prerender requests
   // This ensures prerender services get fresh, complete HTML
   if (isBot(request)) {
