@@ -53,6 +53,50 @@ const RewardsManager = () => {
   const [editingReward, setEditingReward] = useState<ProductReward | null>(null);
   const [editContent, setEditContent] = useState('');
   const [rewardStatus, setRewardStatus] = useState<'all' | 'missing' | 'has'>('all');
+
+  const fetchRewardsWithProducts = async (isApproved: boolean, limit?: number) => {
+    let query = supabase
+      .from('product_rewards')
+      .select('*')
+      .eq('is_approved', isApproved);
+
+    if (isApproved) {
+      query = query.order('approved_at', { ascending: false });
+    } else {
+      query = query.order('generated_at', { ascending: false });
+    }
+
+    if (typeof limit === 'number') {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const rewards = (data || []) as ProductReward[];
+    const productIds = Array.from(new Set(rewards.map((r) => r.product_id).filter(Boolean)));
+
+    if (productIds.length === 0) {
+      return rewards;
+    }
+
+    const { data: productsData, error: productsError } = await supabase
+      .from('products')
+      .select('id, name, slug')
+      .in('id', productIds);
+
+    if (productsError) {
+      // Keep rewards list usable even if product lookup fails.
+      return rewards;
+    }
+
+    const productById = new Map((productsData || []).map((p) => [p.id, { name: p.name, slug: p.slug }]));
+
+    return rewards.map((reward) => ({
+      ...reward,
+      products: productById.get(reward.product_id),
+    }));
+  };
   // Fetch games
   const { data: games = [] } = useQuery({
     queryKey: ['admin-games'],
@@ -122,16 +166,7 @@ const RewardsManager = () => {
   const { data: pendingRewards = [], isLoading: loadingPending } = useQuery({
     queryKey: ['product-rewards-pending'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_rewards')
-        .select(`
-          *,
-          products (name, slug)
-        `)
-        .eq('is_approved', false)
-        .order('generated_at', { ascending: false });
-      if (error) throw error;
-      return data as ProductReward[];
+      return fetchRewardsWithProducts(false);
     },
   });
 
@@ -139,17 +174,7 @@ const RewardsManager = () => {
   const { data: approvedRewards = [], isLoading: loadingApproved } = useQuery({
     queryKey: ['product-rewards-approved'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_rewards')
-        .select(`
-          *,
-          products (name, slug)
-        `)
-        .eq('is_approved', true)
-        .order('approved_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data as ProductReward[];
+      return fetchRewardsWithProducts(true, 50);
     },
   });
 

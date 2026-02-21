@@ -28,15 +28,25 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
     if (!lovableApiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
+    if (!supabaseServiceKey) {
+      throw new Error('Missing service role key (SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE_KEY)');
+    }
+
     // Extract token from Authorization header
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace('Bearer ', '').trim();
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized', details: 'Missing bearer token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     // Create service role client for auth verification
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {

@@ -120,7 +120,11 @@ export const GameFAQsManager = () => {
     setPreviewFAQs(null);
 
     try {
+      const accessToken = session.access_token;
       const { data, error } = await supabase.functions.invoke('generate-game-faqs', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: {
           gameId: selectedGame,
           questionsCount,
