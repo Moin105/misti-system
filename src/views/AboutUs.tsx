@@ -37,6 +37,29 @@ interface AboutStat {
   sort_order: number;
 }
 
+const normalizeContentBlocks = (rawContent: unknown): ContentBlock[] => {
+  if (!rawContent) return [];
+
+  let parsed = rawContent;
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(parsed)) {
+    return parsed.filter((item): item is ContentBlock => !!item && typeof item === "object");
+  }
+
+  if (parsed && typeof parsed === "object") {
+    return [parsed as ContentBlock];
+  }
+
+  return [];
+};
+
 // Lazy-loaded Company Information Section
 const LazyCompanyInfoSection = () => {
   const { ref, isVisible } = useLazyLoad({ rootMargin: "200px" });
@@ -158,7 +181,10 @@ const AboutUs = () => {
         .single();
 
       if (error) throw error;
-      setPageData(data as unknown as PageData);
+      setPageData({
+        ...(data as any),
+        content: normalizeContentBlocks((data as any)?.content),
+      } as PageData);
     } catch (error) {
       console.error("Error fetching page:", error);
     } finally {
@@ -424,7 +450,7 @@ const AboutUs = () => {
           </section>
 
           {/* CMS Content Blocks */}
-          {pageData.content.map((block, index) => renderContentBlock(block, index))}
+          {normalizeContentBlocks(pageData.content).map((block, index) => renderContentBlock(block, index))}
 
           {/* Modern Company Information Section - Lazy Loaded */}
           <LazyCompanyInfoSection />

@@ -31,6 +31,29 @@ interface ContentBlock {
   items?: any[];
 }
 
+const normalizeContentBlocks = (rawContent: unknown): ContentBlock[] => {
+  if (!rawContent) return [];
+
+  let parsed = rawContent;
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(parsed)) {
+    return parsed.filter((item): item is ContentBlock => !!item && typeof item === "object");
+  }
+
+  if (parsed && typeof parsed === "object") {
+    return [parsed as ContentBlock];
+  }
+
+  return [];
+};
+
 export const CMSPagesManager = () => {
   const [pages, setPages] = useState<CMSPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,10 +72,14 @@ export const CMSPagesManager = () => {
         .order("sort_order");
 
       if (error) throw error;
-      setPages((data || []) as unknown as CMSPage[]);
+      const normalizedPages = ((data || []) as any[]).map((page) => ({
+        ...page,
+        content: normalizeContentBlocks(page?.content),
+      }));
+      setPages(normalizedPages as CMSPage[]);
     } catch (error) {
       console.error("Error fetching pages:", error);
-      toast.error("Failed to load pages");
+      toast.error("Failed to load CMS Pages");
     } finally {
       setLoading(false);
     }
@@ -165,7 +192,7 @@ export const CMSPagesManager = () => {
 
                           <div className="space-y-4">
                             <h3 className="text-lg font-semibold">Content Blocks</h3>
-                            {editingPage.content.map((block, index) => (
+                            {normalizeContentBlocks(editingPage.content).map((block, index) => (
                               <Card key={index}>
                                 <CardHeader>
                                   <CardTitle className="text-sm">{block.type.toUpperCase()}</CardTitle>
