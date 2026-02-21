@@ -178,9 +178,9 @@ export default function G2GPriceSyncManager() {
 
   // Initialize batch entries when option is selected
   useEffect(() => {
-    if (selectedBatchOption?.options) {
+    if (selectedBatchOption?.options && Array.isArray(selectedBatchOption.options)) {
       const labels = selectedBatchOption.options
-        .map(opt => opt.label)
+        .map(opt => opt?.label || opt)
         .filter((label): label is string => !!label);
       
       setBatchEntries(labels.map(label => ({
@@ -545,7 +545,9 @@ export default function G2GPriceSyncManager() {
 
   // Get option labels for the selected product option
   const selectedProductOption = productOptions?.find(po => po.id === formProductOptionId);
-  const optionLabels = selectedProductOption?.options?.map(opt => opt.label).filter(Boolean) || [];
+  const optionLabels = (Array.isArray(selectedProductOption?.options) 
+    ? selectedProductOption.options.map(opt => (typeof opt === 'object' ? opt?.label : opt)).filter(Boolean) 
+    : []) || [];
 
   const getTargetLabel = (config: G2GSyncConfig) => {
     if (config.sync_type === 'option' && config.option_label) {

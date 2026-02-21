@@ -530,9 +530,10 @@ const ProductsManager = () => {
       if (error) {
         toast({
           title: "Error",
-          description: "Failed to update product",
+          description: error.message || "Failed to update product",
           variant: "destructive",
         });
+        console.error("Update product error:", error);
         return;
       }
 
@@ -546,9 +547,10 @@ const ProductsManager = () => {
       if (error) {
         toast({
           title: "Error",
-          description: "Failed to create product",
+          description: error.message || "Failed to create product",
           variant: "destructive",
         });
+        console.error("Create product error:", error);
         return;
       }
 
@@ -579,9 +581,10 @@ const ProductsManager = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to delete product",
+        description: error.message || "Failed to delete product",
         variant: "destructive",
       });
+      console.error("Delete product error:", error);
       return;
     }
 
@@ -758,9 +761,10 @@ const ProductsManager = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to delete option",
+        description: error.message || "Failed to delete option",
         variant: "destructive",
       });
+      console.error("Delete option error:", error);
       return;
     }
 
@@ -827,9 +831,10 @@ const ProductsManager = () => {
       if (error) {
         toast({
           title: "Error",
-          description: "Failed to update option",
+          description: error.message || "Failed to update option",
           variant: "destructive",
         });
+        console.error("Update option error:", error);
         return;
       }
 
@@ -845,9 +850,10 @@ const ProductsManager = () => {
       if (error) {
         toast({
           title: "Error",
-          description: "Failed to create option",
+          description: error.message || "Failed to create option",
           variant: "destructive",
         });
+        console.error("Create option error:", error);
         return;
       }
 
@@ -1537,9 +1543,15 @@ const ProductsManager = () => {
                                 )}
                                 {(option.option_type === 'select' || option.option_type === 'button_group' || option.option_type === 'checkbox') && option.options && (
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    Options: {Array.isArray(option.options) && option.options.length > 0 && typeof option.options[0] === 'object' 
-                                      ? option.options.map((o: any) => `${o.label} (${o.priceType === 'percentage' ? `${o.price}%` : `$${o.price}`})`).join(', ')
-                                      : (option.options as string[]).join(', ')}
+                                    Options: {(() => {
+                                      if (!option.options) return 'None';
+                                      if (!Array.isArray(option.options)) return String(option.options);
+                                      if (option.options.length === 0) return 'None';
+                                      if (typeof option.options[0] === 'object') {
+                                        return option.options.map((o: any) => `${o.label || o.value || ''} (${o.priceType === 'percentage' ? `${o.price}%` : `$${o.price || 0}`})`).filter(Boolean).join(', ');
+                                      }
+                                      return (option.options as string[]).filter(Boolean).join(', ');
+                                    })()}
                                   </p>
                                 )}
                               </div>
