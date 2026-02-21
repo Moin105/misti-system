@@ -187,6 +187,22 @@ const SingleEndpointSliderManager = () => {
     return slug;
   };
 
+  const normalizeSliderConfig = (rawConfig: unknown): SingleSliderConfig | null => {
+    if (!rawConfig) return null;
+
+    let config = rawConfig;
+    if (typeof config === "string") {
+      try {
+        config = JSON.parse(config);
+      } catch {
+        return null;
+      }
+    }
+
+    if (!config || typeof config !== "object") return null;
+    return config as SingleSliderConfig;
+  };
+
   const loadData = async () => {
     try {
       const [productsRes, categoriesRes, gamesRes] = await Promise.all([
@@ -212,9 +228,14 @@ const SingleEndpointSliderManager = () => {
       if (gamesRes.error) throw gamesRes.error;
 
       if (productsRes.data) {
-        const singleSliderProducts = (productsRes.data as any[]).filter((p) => {
+        const normalizedProducts = (productsRes.data as any[]).map((p) => ({
+          ...p,
+          slider_config: normalizeSliderConfig(p?.slider_config),
+        }));
+
+        const singleSliderProducts = normalizedProducts.filter((p) => {
           const config = p?.slider_config;
-          if (!config || typeof config !== "object") return false;
+          if (!config) return false;
 
           // Preferred shape: explicitly tagged single slider products.
           if (config.slider_type === "single") return true;
