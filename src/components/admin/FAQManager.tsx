@@ -62,6 +62,7 @@ interface GenerationLog {
   error_message: string | null;
   created_at: string;
   product?: { name: string };
+  product_name?: string;
 }
 
 type Scope = "game" | "category" | "product";
@@ -265,10 +266,7 @@ export const FAQManager = () => {
   const fetchLogs = async () => {
     const { data, error } = await supabase
       .from('faq_generation_logs')
-      .select(`
-        *,
-        product:products(name)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -277,7 +275,32 @@ export const FAQManager = () => {
       return;
     }
 
-    setLogs(data || []);
+    const logsData = (data || []) as GenerationLog[];
+    const productIds = Array.from(new Set(logsData.map((log) => log.product_id).filter(Boolean)));
+
+    if (productIds.length === 0) {
+      setLogs(logsData);
+      return;
+    }
+
+    const { data: productData, error: productsError } = await supabase
+      .from('products')
+      .select('id, name')
+      .in('id', productIds);
+
+    if (productsError) {
+      // Keep logs usable even if product lookup fails.
+      setLogs(logsData);
+      return;
+    }
+
+    const productNameById = new Map((productData || []).map((p) => [p.id, p.name]));
+    const logsWithNames = logsData.map((log) => ({
+      ...log,
+      product_name: log.product_id ? productNameById.get(log.product_id) || undefined : undefined,
+    }));
+
+    setLogs(logsWithNames);
   };
 
   const generateFAQs = async () => {
@@ -780,7 +803,7 @@ export const FAQManager = () => {
                     className="flex items-center justify-between p-4 border rounded-lg"
                   >
                     <div>
-                      <p className="font-medium">{log.product?.name || 'Batch Operation'}</p>
+                      <p className="font-medium">{log.product_name || log.product?.name || 'Batch Operation'}</p>
                       <p className="text-sm text-muted-foreground">
                         {log.operation_type} - {log.questions_generated} questions
                       </p>
