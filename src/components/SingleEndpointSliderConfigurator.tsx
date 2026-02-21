@@ -618,9 +618,13 @@ const SingleEndpointSliderConfigurator = ({
                 );
 
               case "button_group":
-                const buttonGroupOptions = (option.options as any) || [];
+                const rawButtonGroupOptions = option.options as any;
+                const buttonGroupOptions = Array.isArray(rawButtonGroupOptions)
+                  ? rawButtonGroupOptions
+                  : rawButtonGroupOptions
+                    ? [rawButtonGroupOptions]
+                    : [];
                 const isButtonNewFormat =
-                  Array.isArray(buttonGroupOptions) &&
                   buttonGroupOptions.length > 0 &&
                   typeof buttonGroupOptions[0] === "object";
                 
@@ -637,7 +641,10 @@ const SingleEndpointSliderConfigurator = ({
                   const labels = isButtonNewFormat 
                     ? buttonGroupOptions.map((o: any) => o.label || '') 
                     : buttonGroupOptions;
-                  const avgLength = labels.reduce((sum: number, l: string) => sum + l.length, 0) / labels.length;
+                  const avgLength =
+                    labels.length > 0
+                      ? labels.reduce((sum: number, l: string) => sum + String(l).length, 0) / labels.length
+                      : 0;
                   
                   if (avgLength > 12 || count > 6) return 'grid-cols-2';
                   return 'grid-cols-3';
