@@ -57,7 +57,7 @@ const Footer = () => {
     return () => observer.disconnect();
   }, []);
 
-  const renderIcon = (iconName: string, platform?: string, url?: string) => {
+  const renderIcon = (iconName: string, platform?: string, url?: string, index?: number) => {
     const candidates = [iconName, platform, url].filter(Boolean).join(" ").toLowerCase();
 
     const socialAliases: Array<{ test: RegExp; icon: string }> = [
@@ -70,7 +70,12 @@ const Footer = () => {
     ];
 
     const matched = socialAliases.find((entry) => entry.test.test(candidates));
-    const finalName = matched?.icon || (iconName || platform || "").trim();
+    let finalName = matched?.icon || (iconName || platform || "").trim();
+    if (!finalName && typeof index === "number") {
+      // Hard fallback for legacy rows with empty icon/platform/url fields.
+      if (index === 0) finalName = "Facebook";
+      if (index === 1) finalName = "Instagram";
+    }
 
     // Try direct icon first (synchronous, no async loading)
     const DirectIcon = socialIconMap[finalName];
@@ -138,8 +143,8 @@ const Footer = () => {
             </div>
             {socialLinks.length > 0 && (
               <div className="flex gap-4 mb-6">
-                {socialLinks.map((social) => {
-                  const icon = renderIcon(social.icon_name, social.platform, social.url);
+                {socialLinks.map((social, index) => {
+                  const icon = renderIcon(social.icon_name, social.platform, social.url, index);
                   return (
                     <a
                       key={social.id}
