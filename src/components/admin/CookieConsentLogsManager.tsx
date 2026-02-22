@@ -18,8 +18,40 @@ interface ConsentLog {
   user_id: string | null;
   session_id: string;
   ip_hash: string | null;
-  consent_preferences: Record<string, boolean>;
+  consent_preferences: unknown;
   consent_timestamp: string;
+}
+
+const DEFAULT_PREFS: Record<string, boolean> = {
+  analytics: false,
+  marketing: false,
+  necessary: true,
+  preferences: false,
+};
+
+function normalizeConsentPreferences(raw: unknown): Record<string, boolean> {
+  let parsed: unknown = raw;
+
+  if (typeof raw === "string") {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return DEFAULT_PREFS;
+    }
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return DEFAULT_PREFS;
+  }
+
+  const entries = Object.entries(parsed as Record<string, unknown>);
+  if (entries.length === 0) return DEFAULT_PREFS;
+
+  const result: Record<string, boolean> = {};
+  for (const [key, value] of entries) {
+    result[key] = Boolean(value);
+  }
+  return result;
 }
 
 export default function CookieConsentLogsManager() {
@@ -33,7 +65,10 @@ export default function CookieConsentLogsManager() {
         .limit(100);
 
       if (error) throw error;
-      return data as ConsentLog[];
+      return (data as ConsentLog[]).map((log) => ({
+        ...log,
+        consent_preferences: normalizeConsentPreferences(log.consent_preferences),
+      }));
     },
   });
 
@@ -48,7 +83,7 @@ export default function CookieConsentLogsManager() {
           log.user_id || "Anonymous",
           log.session_id,
           log.ip_hash || "N/A",
-          JSON.stringify(log.consent_preferences),
+          JSON.stringify(normalizeConsentPreferences(log.consent_preferences)),
         ].join(",")
       ),
     ].join("\n");
@@ -113,7 +148,7 @@ export default function CookieConsentLogsManager() {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {Object.entries(log.consent_preferences).map(([key, value]) => (
+                    {Object.entries(normalizeConsentPreferences(log.consent_preferences)).map(([key, value]) => (
                       <Badge
                         key={key}
                         variant={value ? "default" : "secondary"}
