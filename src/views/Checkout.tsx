@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import CountrySelector from "@/components/CountrySelector";
+import { env } from "@/lib/env";
 
 
 // Small order surcharge constants
@@ -431,23 +432,37 @@ const Checkout = () => {
 
     // Create Stripe checkout session
     try {
-      const { data: stripeData, error: stripeError } = await supabase.functions.invoke(
-        "create-checkout-session",
-        {
-          body: {
-            orderId,
-            orderNumber,
-            totalAmount: finalTotal,
-            items: items.map(item => ({
-              name: item.product_name,
-              quantity: toSafeQuantity(item.quantity),
-              unitPrice: toSafeNumber(item.total_price, 0),
-            })),
-            couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
-            couponCode: appliedCoupon?.code,
+      const checkoutPayload = {
+        orderId,
+        orderNumber,
+        totalAmount: finalTotal,
+        items: items.map(item => ({
+          name: item.product_name,
+          quantity: toSafeQuantity(item.quantity),
+          unitPrice: toSafeNumber(item.total_price, 0),
+        })),
+        couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+        couponCode: appliedCoupon?.code,
+      };
+
+      const invokeWithToken = async (accessToken: string) =>
+        supabase.functions.invoke("create-checkout-session", {
+          body: checkoutPayload,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            apikey: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
           },
+        });
+
+      let { data: stripeData, error: stripeError } = await invokeWithToken(session.access_token);
+
+      // If token is stale/invalid, refresh once and retry.
+      if (stripeError?.message?.toLowerCase().includes("invalid jwt")) {
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError && refreshed.session?.access_token) {
+          ({ data: stripeData, error: stripeError } = await invokeWithToken(refreshed.session.access_token));
         }
-      );
+      }
 
       if (stripeError) throw stripeError;
 

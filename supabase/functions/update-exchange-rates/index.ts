@@ -50,7 +50,7 @@ serve(async (req) => {
       console.error('API returned non-success result:', errorType);
       throw new Error(`Exchange rate API error: ${errorType}`);
     }
-
+    
     const rates = data.conversion_rates || data.rates;
     const eurRate = rates?.EUR;
     if (!eurRate || typeof eurRate !== 'number') {
