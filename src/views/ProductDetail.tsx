@@ -76,6 +76,79 @@ const SliderConfiguratorSkeleton = () => (
   </div>
 );
 
+const parseJsonIfString = (value: unknown) => {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const toNumberOr = (value: unknown, fallback: number) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+const normalizeSliderConfig = (rawConfig: any) => {
+  const parsedConfig = parseJsonIfString(rawConfig) as Record<string, any> | null;
+  if (!parsedConfig || typeof parsedConfig !== "object") return null;
+
+  const sliderType = parsedConfig.slider_type === "single" ? "single" : "range";
+  const minValue = toNumberOr(parsedConfig.min_value, 1);
+  const maxValue = Math.max(minValue + 1, toNumberOr(parsedConfig.max_value, 60));
+  const step = Math.max(1, toNumberOr(parsedConfig.step, 1));
+  const estimatedTimePerStep = Math.max(0.1, toNumberOr(parsedConfig.estimated_time_per_step, 0.5));
+
+  const pricingBrackets = Array.isArray(parsedConfig.pricing_brackets)
+    ? parsedConfig.pricing_brackets
+        .map((b: any) => ({
+          start: toNumberOr(b?.start, 0),
+          end: toNumberOr(b?.end, 0),
+          price: toNumberOr(b?.price, 0),
+        }))
+        .filter((b: any) => b.end > b.start)
+    : undefined;
+
+  if (sliderType === "single") {
+    const defaultValueRaw = parsedConfig.default_value ?? minValue;
+    const defaultValue = Math.min(maxValue, Math.max(minValue, toNumberOr(defaultValueRaw, minValue)));
+    return {
+      ...parsedConfig,
+      slider_type: "single",
+      min_value: minValue,
+      max_value: maxValue,
+      step,
+      default_value: defaultValue,
+      estimated_time_per_step: estimatedTimePerStep,
+      pricing_brackets: pricingBrackets,
+      value_label: parsedConfig.value_label || "Level",
+    };
+  }
+
+  const startRaw = parsedConfig.default_start ?? parsedConfig.default_value ?? minValue;
+  const endRaw = parsedConfig.default_end ?? maxValue;
+  let defaultStart = Math.min(maxValue, Math.max(minValue, toNumberOr(startRaw, minValue)));
+  let defaultEnd = Math.min(maxValue, Math.max(minValue, toNumberOr(endRaw, maxValue)));
+  if (defaultStart > defaultEnd) {
+    [defaultStart, defaultEnd] = [defaultEnd, defaultStart];
+  }
+
+  return {
+    ...parsedConfig,
+    slider_type: "range",
+    min_value: minValue,
+    max_value: maxValue,
+    step,
+    default_start: defaultStart,
+    default_end: defaultEnd,
+    estimated_time_per_step: estimatedTimePerStep,
+    pricing_brackets: pricingBrackets,
+    start_label: parsedConfig.start_label || "Start Level",
+    end_label: parsedConfig.end_label || "End Level",
+  };
+};
+
 interface ProductOption {
   id: string;
   name: string;
@@ -168,6 +241,11 @@ const ProductDetail = () => {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const normalizedSliderConfig = useMemo(() => {
+    if (!product?.is_slider_product || !product.slider_config) return null;
+    return normalizeSliderConfig(product.slider_config);
+  }, [product?.is_slider_product, product?.slider_config]);
 
   // Handle navigation to gone page for deleted URLs
   useEffect(() => {
@@ -1076,11 +1154,11 @@ const ProductDetail = () => {
                 <div className="self-start">
                   {extrasLoading ? (
                     <SliderConfiguratorSkeleton />
-                  ) : product.is_slider_product && product.slider_config ? (
+                  ) : product.is_slider_product && normalizedSliderConfig ? (
                     <Suspense fallback={<SliderConfiguratorSkeleton />}>
-                      {product.slider_config.slider_type === "single" ? (
+                      {normalizedSliderConfig.slider_type === "single" ? (
                         <SingleEndpointSliderConfigurator
-                          sliderConfig={product.slider_config as any}
+                          sliderConfig={normalizedSliderConfig as any}
                           basePrice={product.base_price}
                           productOptions={productOptions as any[]}
                           productName={product.name}
@@ -1117,7 +1195,7 @@ const ProductDetail = () => {
                         />
                       ) : (
                         <SliderProductConfigurator
-                          sliderConfig={product.slider_config as any}
+                          sliderConfig={normalizedSliderConfig as any}
                           basePrice={product.base_price}
                           productOptions={productOptions as any[]}
                           productName={product.name}
