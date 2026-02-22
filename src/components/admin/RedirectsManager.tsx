@@ -22,9 +22,9 @@ interface UrlRedirect {
   source_path: string;
   destination_path: string;
   is_pattern: boolean;
-  status_code: number;
+  status_code: number | null;
   is_active: boolean;
-  hit_count: number;
+  hit_count: number | null;
   last_hit_at: string | null;
   created_at: string;
   updated_at: string;
@@ -113,10 +113,26 @@ export default function RedirectsManager() {
   // Create redirect
   const createMutation = useMutation({
     mutationFn: async (data: RedirectFormData) => {
-      const { data: session } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session?.user?.id) {
+        throw new Error("Authentication required. Please log in again.");
+      }
+
+      // Early guard for better UX when role/session drift exists.
+      const { data: roles, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", sessionData.session.user.id);
+      if (roleError) throw roleError;
+      const isAdmin = (roles || []).some((r: any) => r.role === "admin");
+      if (!isAdmin) {
+        throw new Error("Admin role required to create redirects.");
+      }
+
       const { error } = await supabase.from("url_redirects").insert({
         ...data,
-        created_by: session.session?.user?.id,
+        created_by: sessionData.session.user.id,
       });
       if (error) throw error;
     },
@@ -295,7 +311,7 @@ export default function RedirectsManager() {
   // Stats
   const totalRedirects = redirects.length;
   const activeRedirects = redirects.filter((r) => r.is_active).length;
-  const totalHits = redirects.reduce((sum, r) => sum + r.hit_count, 0);
+  const totalHits = redirects.reduce((sum, r) => sum + (r.hit_count ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -653,7 +669,7 @@ export default function RedirectsManager() {
                         />
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {redirect.hit_count.toLocaleString()}
+                        {(redirect.hit_count ?? 0).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         {redirect.last_hit_at ? (
