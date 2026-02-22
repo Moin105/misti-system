@@ -36,6 +36,11 @@ const Footer = () => {
 
   const sections = footerData?.sections || [];
   const socialLinks = footerData?.socialLinks || [];
+  const fallbackSocialLinks = [
+    { id: "fallback-facebook", platform: "Facebook", url: "#", icon_name: "facebook" },
+    { id: "fallback-instagram", platform: "Instagram", url: "#", icon_name: "instagram" },
+  ];
+  const displaySocialLinks = socialLinks.length > 0 ? socialLinks : fallbackSocialLinks;
 
   // Lazy load Stripe iframe when it comes into view
   useEffect(() => {
@@ -141,28 +146,30 @@ const Footer = () => {
                 }}
               />
             </div>
-            {socialLinks.length > 0 && (
-              <div className="flex gap-4 mb-6">
-                {socialLinks.map((social, index) => {
-                  const icon = renderIcon(social.icon_name, social.platform, social.url, index);
-                  return (
-                    <a
-                      key={social.id}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 
-                                 border border-white/10 flex items-center justify-center 
-                                 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]
-                                 hover:scale-110 transition-all duration-300 text-white"
-                      title={social.platform}
-                    >
-                      {icon || <span className="text-xs text-white">{social.platform.charAt(0)}</span>}
-                    </a>
-                  );
-                })}
-              </div>
-            )}
+            <div className="flex gap-4 mb-6">
+              {displaySocialLinks.map((social, index) => {
+                const icon = renderIcon(social.icon_name, social.platform, social.url, index);
+                const hasRealUrl = Boolean(social.url && social.url !== "#");
+                return (
+                  <a
+                    key={social.id}
+                    href={hasRealUrl ? social.url : "#"}
+                    target={hasRealUrl ? "_blank" : undefined}
+                    rel={hasRealUrl ? "noopener noreferrer" : undefined}
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 
+                               border border-white/10 flex items-center justify-center 
+                               hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]
+                               hover:scale-110 transition-all duration-300 text-white"
+                    title={social.platform}
+                    onClick={(e) => {
+                      if (!hasRealUrl) e.preventDefault();
+                    }}
+                  >
+                    {icon || <span className="text-xs text-white">{social.platform.charAt(0)}</span>}
+                  </a>
+                );
+              })}
+            </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p className="font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Merchant Name:</p>
               <p>Masterloot Solutions LLC</p>
