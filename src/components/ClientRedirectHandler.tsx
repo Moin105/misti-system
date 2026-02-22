@@ -4,10 +4,9 @@ import { env } from "@/lib/env";
 
 // Cache redirects list to avoid repeated API calls
 let cachedRedirects: RedirectRule[] | null = null;
+let cachedRedirectsAt = 0;
 let redirectsFetchPromise: Promise<RedirectRule[]> | null = null;
-
-// Cache to avoid duplicate path checks
-const checkedPaths = new Set<string>();
+const REDIRECT_CACHE_TTL_MS = 30 * 1000; // 30s so admin updates reflect quickly
 
 // Routes that should NEVER trigger redirect checks (performance optimization)
 const SKIP_REDIRECT_PREFIXES = [
@@ -29,7 +28,6 @@ const SKIP_EXACT_ROUTES = new Set([
   "/work-with-us",
   "/about-us",
   "/contact-us",
-  "/cashback",
   "/gone",
   "/forbidden",
 ]);
@@ -49,8 +47,8 @@ export default function ClientRedirectHandler() {
     const checkRedirect = async () => {
       const pathname = location.pathname;
 
-      // Skip if already checking or already checked this path
-      if (isCheckingRef.current || checkedPaths.has(pathname)) {
+      // Skip if already checking
+      if (isCheckingRef.current) {
         return;
       }
 
@@ -68,10 +66,16 @@ export default function ClientRedirectHandler() {
 
       try {
         // Get redirects (cached or fetch once)
-        const redirects = await getRedirects();
+        let redirects = await getRedirects();
         
         // Find a matching redirect
-        const match = findMatchingRedirect(redirects, pathname);
+        let match = findMatchingRedirect(redirects, pathname);
+
+        // If not found, force refresh once to pick up newly created redirect rules immediately.
+        if (!match) {
+          redirects = await getRedirects(true);
+          match = findMatchingRedirect(redirects, pathname);
+        }
 
         if (match) {
           // Increment hit count asynchronously (fire and forget)
@@ -104,11 +108,8 @@ export default function ClientRedirectHandler() {
           }
         }
 
-        // Mark as checked (no redirect needed)
-        checkedPaths.add(pathname);
       } catch (error) {
         console.error("Redirect check error:", error);
-        checkedPaths.add(pathname);
       } finally {
         isCheckingRef.current = false;
       }
@@ -121,8 +122,12 @@ export default function ClientRedirectHandler() {
 }
 
 // Fetch redirects once and cache
-async function getRedirects(): Promise<RedirectRule[]> {
-  if (cachedRedirects) {
+async function getRedirects(forceRefresh = false): Promise<RedirectRule[]> {
+  const cacheValid =
+    cachedRedirects &&
+    Date.now() - cachedRedirectsAt < REDIRECT_CACHE_TTL_MS;
+
+  if (!forceRefresh && cacheValid) {
     return cachedRedirects;
   }
 
@@ -143,6 +148,7 @@ async function getRedirects(): Promise<RedirectRule[]> {
     .then(res => res.json())
     .then(data => {
       cachedRedirects = data?.redirects || [];
+      cachedRedirectsAt = Date.now();
       redirectsFetchPromise = null;
       return cachedRedirects;
     })
