@@ -12,8 +12,8 @@ interface ExchangeRate {
 interface CurrencyContextType {
   currency: Currency;
   setCurrency: (currency: Currency) => void;
-  convertPrice: (price: number, fromCurrency?: Currency) => number;
-  formatPrice: (price: number, fromCurrency?: Currency) => string;
+  convertPrice: (price: number | null | undefined, fromCurrency?: Currency) => number;
+  formatPrice: (price: number | null | undefined, fromCurrency?: Currency) => string;
   rates: ExchangeRate[];
   loading: boolean;
 }
@@ -35,17 +35,18 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     window.localStorage.setItem("preferred_currency", currency);
   }, [currency]);
 
-  const convertPrice = useCallback((price: number, fromCurrency: Currency = "USD"): number => {
-    if (fromCurrency === currency) return price;
+  const convertPrice = useCallback((price: number | null | undefined, fromCurrency: Currency = "USD"): number => {
+    const safePrice = typeof price === "number" && Number.isFinite(price) ? price : 0;
+    if (fromCurrency === currency) return safePrice;
     
     const rate = rates.find(
       r => r.base_currency === fromCurrency && r.target_currency === currency
     );
     
-    return rate ? price * Number(rate.rate) : price;
+    return rate ? safePrice * Number(rate.rate) : safePrice;
   }, [currency, rates]);
 
-  const formatPrice = useCallback((price: number, fromCurrency: Currency = "USD"): string => {
+  const formatPrice = useCallback((price: number | null | undefined, fromCurrency: Currency = "USD"): string => {
     const converted = convertPrice(price, fromCurrency);
     const symbol = currency === "EUR" ? "€" : "$";
     return `${symbol}${converted.toFixed(2)}`;

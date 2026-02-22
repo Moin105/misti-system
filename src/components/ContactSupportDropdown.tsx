@@ -93,14 +93,17 @@ export const ContactSupportDropdown = ({
       const { error: dbError } = await supabase
         .from("product_inquiries")
         .insert([{
+          id: crypto.randomUUID(),
           user_id: user?.id || null,
           customer_name: validatedData.name,
           customer_email: validatedData.email,
           product_name: productName || null,
           message: validatedData.message,
         }]);
-
-      if (dbError) throw dbError;
+      if (dbError) {
+        // Do not block support contact if inquiry logging fails.
+        console.error("Error saving inquiry record:", dbError);
+      }
 
       const { error: emailError } = await supabase.functions.invoke("send-inquiry-notification", {
         body: {

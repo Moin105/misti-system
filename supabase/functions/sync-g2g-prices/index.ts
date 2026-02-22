@@ -42,6 +42,31 @@ interface SyncResult {
   error?: string;
 }
 
+type OptionEntry = { label: string; price?: number; priceType?: string; [key: string]: any };
+
+function normalizeOptionEntries(rawOptions: unknown): OptionEntry[] {
+  if (!rawOptions) return [];
+
+  let parsed = rawOptions;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(parsed)) {
+    return parsed.filter((opt): opt is OptionEntry => !!opt && typeof opt === 'object');
+  }
+
+  if (parsed && typeof parsed === 'object') {
+    return [parsed as OptionEntry];
+  }
+
+  return [];
+}
+
 // Select price based on average of top 5 lowest offers for market accuracy
 function selectReliablePrice(prices: number[]): number {
   if (prices.length === 0) return 0;
@@ -718,7 +743,11 @@ Deno.serve(async (req) => {
           }
 
           // Update the matching option's price
-          const options = productOption.options as Array<{ label: string; price?: number; priceType?: string; [key: string]: any }>;
+          const options = normalizeOptionEntries(productOption.options);
+          if (options.length === 0) {
+            throw new Error('Selected product option has no valid options array');
+          }
+
           let optionFound = false;
           
           const updatedOptions = options.map(opt => {

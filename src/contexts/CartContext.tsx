@@ -63,7 +63,7 @@ async function fetchCartItems(userId: string): Promise<CartItem[]> {
       quantity: item.quantity,
       base_price: item.products.base_price,
       selected_options: item.selected_options || {},
-      total_price: item.total_price,
+      total_price: Number(item.total_price ?? 0),
     }));
 }
 
@@ -120,15 +120,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       (old: CartItem[] | undefined) => [...(old || []), optimisticItem]
     );
 
+    const safeTotalPrice = Number(item.total_price ?? item.base_price ?? 0);
     const { error } = await supabase.from("cart_items").insert({
+      id: crypto.randomUUID(),
       user_id: session.user.id,
       product_id: item.product_id,
       quantity: item.quantity,
-      selected_options: item.selected_options,
-      total_price: item.total_price,
+      selected_options: item.selected_options || {},
+      total_price: Number.isFinite(safeTotalPrice) ? safeTotalPrice : 0,
     });
 
     if (error) {
+      console.error("Failed to insert cart item:", error);
       // Rollback optimistic update
       queryClient.setQueryData(
         ['cart', session.user.id],
@@ -136,7 +139,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
       toast({
         title: "Error",
-        description: "Failed to add item to cart",
+        description: error.message || "Failed to add item to cart",
         variant: "destructive",
       });
       return false;
