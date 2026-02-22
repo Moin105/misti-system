@@ -367,25 +367,71 @@ const GamesManager = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this game?")) return;
 
-    const { error } = await supabase
+    const nowIso = new Date().toISOString();
+    const { data: game, error: gameFetchError } = await supabase
       .from("games")
-      .delete()
-      .eq("id", id);
+      .select("id, name")
+      .eq("id", id)
+      .single();
 
-    if (error) {
+    if (gameFetchError) {
       toast({
         title: "Error",
         description: "Failed to delete game",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Game deleted successfully"
-      });
-      await refreshAdminData(['/rest/v1/games'], ['games']);
-      fetchGames();
+      return;
     }
+
+    const { data: gameUrl, error: urlError } = await supabase.rpc("get_game_url", {
+      game_id: id,
+    });
+    if (urlError) {
+      toast({
+        title: "Error",
+        description: "Failed to resolve game URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const { error: softDeleteError } = await supabase
+      .from("games")
+      .update({ is_active: false, updated_at: nowIso })
+      .eq("id", id);
+
+    if (softDeleteError) {
+      toast({
+        title: "Error",
+        description: "Failed to delete game",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (gameUrl) {
+      const { error: deletedUrlError } = await supabase
+        .from("deleted_urls")
+        .upsert(
+          {
+            url_path: gameUrl,
+            content_type: "game",
+            content_id: id,
+            original_title: game?.name ?? null,
+          },
+          { onConflict: "url_path" },
+        );
+      if (deletedUrlError) {
+        console.error("Failed adding game URL to deleted list:", deletedUrlError);
+      }
+    }
+
+    toast({
+      title: "Success",
+      description: "Game moved to 410 deleted URLs list"
+    });
+    await refreshAdminData(['/rest/v1/games', '/rest/v1/deleted_urls'], ['games', 'deleted-urls']);
+    fetchGames();
   };
 
   const resetForm = () => {

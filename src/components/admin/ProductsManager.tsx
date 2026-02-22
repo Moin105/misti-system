@@ -576,24 +576,73 @@ const ProductsManager = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    const nowIso = new Date().toISOString();
+    const { data: product, error: productFetchError } = await supabase
+      .from("products")
+      .select("id, name")
+      .eq("id", id)
+      .single();
 
-    if (error) {
+    if (productFetchError) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete product",
+        description: productFetchError.message || "Failed to delete product",
         variant: "destructive",
       });
-      console.error("Delete product error:", error);
+      console.error("Delete product fetch error:", productFetchError);
       return;
+    }
+
+    const { data: productUrl, error: urlError } = await supabase.rpc("get_product_url", {
+      product_id: id,
+    });
+    if (urlError) {
+      toast({
+        title: "Error",
+        description: urlError.message || "Failed to resolve product URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error: softDeleteError } = await supabase
+      .from("products")
+      .update({ is_active: false, updated_at: nowIso })
+      .eq("id", id);
+
+    if (softDeleteError) {
+      toast({
+        title: "Error",
+        description: softDeleteError.message || "Failed to delete product",
+        variant: "destructive",
+      });
+      console.error("Soft delete product error:", softDeleteError);
+      return;
+    }
+
+    if (productUrl) {
+      const { error: deletedUrlError } = await supabase
+        .from("deleted_urls")
+        .upsert(
+          {
+            url_path: productUrl,
+            content_type: "product",
+            content_id: id,
+            original_title: product?.name ?? null,
+          },
+          { onConflict: "url_path" },
+        );
+      if (deletedUrlError) {
+        console.error("Failed adding product URL to deleted list:", deletedUrlError);
+      }
     }
 
     toast({
       title: "Success",
-      description: "Product deleted successfully",
+      description: "Product moved to 410 deleted URLs list",
     });
 
-    await refreshAdminData(['/rest/v1/products'], ['products']);
+    await refreshAdminData(['/rest/v1/products', '/rest/v1/deleted_urls'], ['products', 'deleted-urls']);
     await fetchProducts();
   };
 

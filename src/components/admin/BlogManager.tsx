@@ -221,22 +221,71 @@ const BlogManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase
+    const nowIso = new Date().toISOString();
+    const { data: post, error: postFetchError } = await supabase
       .from("blog_posts")
-      .delete()
-      .eq("id", id);
+      .select("id, title")
+      .eq("id", id)
+      .single();
 
-    if (error) {
+    if (postFetchError) {
       toast({
         title: "Error deleting post",
-        description: error.message,
+        description: postFetchError.message,
         variant: "destructive",
       });
-    } else {
-      toast({ title: "Post deleted successfully" });
-      await refreshAdminData(['/rest/v1/blog_posts'], ['blog-posts']);
-      fetchPosts();
+      return;
     }
+
+    const { data: blogUrl, error: urlError } = await supabase.rpc("get_blog_post_url", {
+      post_id: id,
+    });
+    if (urlError) {
+      toast({
+        title: "Error deleting post",
+        description: "Failed to resolve blog URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error: softDeleteError } = await supabase
+      .from("blog_posts")
+      .update({
+        is_published: false,
+        updated_at: nowIso,
+      })
+      .eq("id", id);
+
+    if (softDeleteError) {
+      toast({
+        title: "Error deleting post",
+        description: softDeleteError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (blogUrl) {
+      const { error: deletedUrlError } = await supabase
+        .from("deleted_urls")
+        .upsert(
+          {
+            url_path: blogUrl,
+            content_type: "blog_post",
+            content_id: id,
+            original_title: post?.title ?? null,
+          },
+          { onConflict: "url_path" },
+        );
+      if (deletedUrlError) {
+        console.error("Failed adding blog URL to deleted list:", deletedUrlError);
+      }
+    }
+
+    toast({ title: "Post moved to 410 deleted URLs list" });
+    await refreshAdminData(['/rest/v1/blog_posts', '/rest/v1/deleted_urls'], ['blog-posts', 'deleted-urls']);
+    fetchPosts();
   };
 
   const resetForm = () => {

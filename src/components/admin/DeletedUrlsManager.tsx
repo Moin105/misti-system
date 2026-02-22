@@ -16,8 +16,10 @@ interface DeletedUrl {
   id: string;
   url_path: string;
   content_type: string;
+  content_id: string | null;
   original_title: string | null;
   deleted_at: string;
+  created_at: string | null;
   deleted_by: string | null;
 }
 
@@ -72,6 +74,54 @@ const DeletedUrlsManager = () => {
     }
 
     try {
+      const { data: deletedEntry, error: fetchError } = await supabase
+        .from('deleted_urls')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Best-effort restore of original content visibility.
+      // This works when content rows still exist (soft-hidden state).
+      let restoredEntity = false;
+      if (deletedEntry?.content_id) {
+        const nowIso = new Date().toISOString();
+        if (deletedEntry.content_type === "product") {
+          const { data: restoredRows, error: restoreError } = await supabase
+            .from("products")
+            .update({ is_active: true, updated_at: nowIso })
+            .eq("id", deletedEntry.content_id)
+            .select("id");
+          if (restoreError) throw restoreError;
+          restoredEntity = (restoredRows?.length ?? 0) > 0;
+        } else if (deletedEntry.content_type === "category") {
+          const { data: restoredRows, error: restoreError } = await supabase
+            .from("categories")
+            .update({ is_active: true, updated_at: nowIso })
+            .eq("id", deletedEntry.content_id)
+            .select("id");
+          if (restoreError) throw restoreError;
+          restoredEntity = (restoredRows?.length ?? 0) > 0;
+        } else if (deletedEntry.content_type === "game") {
+          const { data: restoredRows, error: restoreError } = await supabase
+            .from("games")
+            .update({ is_active: true, updated_at: nowIso })
+            .eq("id", deletedEntry.content_id)
+            .select("id");
+          if (restoreError) throw restoreError;
+          restoredEntity = (restoredRows?.length ?? 0) > 0;
+        } else if (deletedEntry.content_type === "blog_post") {
+          const { data: restoredRows, error: restoreError } = await supabase
+            .from("blog_posts")
+            .update({ is_published: true, updated_at: nowIso })
+            .eq("id", deletedEntry.content_id)
+            .select("id");
+          if (restoreError) throw restoreError;
+          restoredEntity = (restoredRows?.length ?? 0) > 0;
+        }
+      }
+
       const { error } = await supabase
         .from('deleted_urls')
         .delete()
@@ -81,7 +131,9 @@ const DeletedUrlsManager = () => {
 
       toast({
         title: "Success",
-        description: "URL removed from deleted list",
+        description: restoredEntity
+          ? "URL removed and content restored to active/published state"
+          : "URL removed from deleted list",
       });
 
       await refreshAdminData(['/rest/v1/deleted_urls'], ['deleted-urls']);
@@ -158,6 +210,20 @@ const DeletedUrlsManager = () => {
       case 'category': return 'destructive';
       default: return 'default';
     }
+  };
+
+  const getDisplayDeletedDate = (url: DeletedUrl) => {
+    const deletedDate = new Date(url.deleted_at);
+    const deletedDateValid = Number.isFinite(deletedDate.getTime()) && deletedDate.getUTCFullYear() > 1971;
+    if (deletedDateValid) return deletedDate.toLocaleDateString();
+
+    const createdDate = url.created_at ? new Date(url.created_at) : null;
+    const createdDateValid = Boolean(
+      createdDate && Number.isFinite(createdDate.getTime()) && createdDate.getUTCFullYear() > 1971,
+    );
+    if (createdDateValid && createdDate) return createdDate.toLocaleDateString();
+
+    return "-";
   };
 
   const stats = {
@@ -334,7 +400,7 @@ const DeletedUrlsManager = () => {
                       </TableCell>
                       <TableCell>{url.original_title || '-'}</TableCell>
                       <TableCell>
-                        {new Date(url.deleted_at).toLocaleDateString()}
+                        {getDisplayDeletedDate(url)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

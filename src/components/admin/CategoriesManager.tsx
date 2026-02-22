@@ -230,25 +230,71 @@ const CategoriesManager = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this category?")) return;
 
-    const { error } = await supabase
+    const nowIso = new Date().toISOString();
+    const { data: category, error: categoryFetchError } = await supabase
       .from("categories")
-      .delete()
-      .eq("id", id);
+      .select("id, name")
+      .eq("id", id)
+      .single();
 
-    if (error) {
+    if (categoryFetchError) {
       toast({
         title: "Error",
         description: "Failed to delete category",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Category deleted successfully"
-      });
-      await refreshAdminData(['/rest/v1/categories'], ['categories']);
-      fetchCategories();
+      return;
     }
+
+    const { data: categoryUrl, error: urlError } = await supabase.rpc("get_category_url", {
+      category_id: id,
+    });
+    if (urlError) {
+      toast({
+        title: "Error",
+        description: "Failed to resolve category URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const { error: softDeleteError } = await supabase
+      .from("categories")
+      .update({ is_active: false, updated_at: nowIso })
+      .eq("id", id);
+
+    if (softDeleteError) {
+      toast({
+        title: "Error",
+        description: "Failed to delete category",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (categoryUrl) {
+      const { error: deletedUrlError } = await supabase
+        .from("deleted_urls")
+        .upsert(
+          {
+            url_path: categoryUrl,
+            content_type: "category",
+            content_id: id,
+            original_title: category?.name ?? null,
+          },
+          { onConflict: "url_path" },
+        );
+      if (deletedUrlError) {
+        console.error("Failed adding category URL to deleted list:", deletedUrlError);
+      }
+    }
+
+    toast({
+      title: "Success",
+      description: "Category moved to 410 deleted URLs list"
+    });
+    await refreshAdminData(['/rest/v1/categories', '/rest/v1/deleted_urls'], ['categories', 'deleted-urls']);
+    fetchCategories();
   };
 
   const resetForm = () => {

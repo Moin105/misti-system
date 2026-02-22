@@ -4,7 +4,7 @@ project_id = "sclvjrnnnbbptnhonoks"
 verify_jwt = false
 
 [functions.send-order-notification]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-inquiry-notification]
 verify_jwt = false

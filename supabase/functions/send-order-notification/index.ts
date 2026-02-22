@@ -40,6 +40,45 @@ interface OrderNotificationRequest {
   newStatus?: string;
 }
 
+class HttpError extends Error {
+  status: number;
+  code: string;
+  details?: unknown;
+
+  constructor(status: number, code: string, message: string, details?: unknown) {
+    super(message);
+    this.name = "HttpError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
+function jsonResponse(payload: unknown, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+}
+
+function errorResponse(
+  requestId: string,
+  status: number,
+  code: string,
+  message: string,
+  details?: unknown,
+) {
+  return jsonResponse(
+    {
+      error: message,
+      code,
+      requestId,
+      ...(details !== undefined ? { details } : {}),
+    },
+    status,
+  );
+}
+
 const getStatusBadgeColor = (status: string): string => {
   const colors: Record<string, string> = {
     pending: "#FFA500",
@@ -51,46 +90,70 @@ const getStatusBadgeColor = (status: string): string => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  const requestId = crypto.randomUUID();
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Authenticate the request
+    if (req.method !== "POST") {
+      throw new HttpError(405, "METHOD_NOT_ALLOWED", "Method not allowed. Use POST.");
+    }
+
+    // Auth is optional when verify_jwt=false. If token exists and is valid, we use it for ownership checks.
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      console.error("Missing authorization header");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    let user: { id: string } | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const { data, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+      if (!authError && data.user) {
+        user = { id: data.user.id };
+      } else {
+        console.warn("[SEND-ORDER-NOTIFICATION] Invalid/expired token provided, continuing as unauthenticated", {
+          requestId,
+          authError: authError?.message ?? "unknown",
+        });
+      }
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-
-    if (authError || !user) {
-      console.error("Authentication failed:", authError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    let body: OrderNotificationRequest;
+    try {
+      body = await req.json();
+    } catch {
+      throw new HttpError(400, "INVALID_JSON", "Request body must be valid JSON");
     }
 
-    const { orderId, type, newStatus }: OrderNotificationRequest = await req.json();
+    const { orderId, type, newStatus } = body;
+    if (!orderId || typeof orderId !== "string") {
+      throw new HttpError(400, "INVALID_ORDER_ID", "orderId is required");
+    }
+    if (!["created", "paid", "status_changed"].includes(type)) {
+      throw new HttpError(400, "INVALID_TYPE", "type must be one of: created, paid, status_changed");
+    }
+    if (type === "status_changed") {
+      const allowedStatus = ["pending", "processing", "completed", "cancelled"];
+      if (!newStatus || !allowedStatus.includes(newStatus)) {
+        throw new HttpError(400, "INVALID_STATUS", "newStatus is required for status_changed");
+      }
+    }
 
-    console.log(`Processing ${type} notification for order:`, orderId);
+    console.log("[SEND-ORDER-NOTIFICATION] Processing request", {
+      requestId,
+      orderId,
+      type,
+      authenticated: Boolean(user),
+    });
 
-    // Check if user has admin role
-    const { data: userRoles, error: roleError } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    const isAdmin = !roleError && userRoles !== null;
+    let isAdmin = false;
+    if (user) {
+      const { data: userRoles, error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      isAdmin = !roleError && userRoles !== null;
+    }
 
     // Verify the order belongs to the user or user is admin
     const { data: orderCheck, error: orderCheckError } = await supabaseAdmin
@@ -100,20 +163,13 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (orderCheckError || !orderCheck) {
-      console.error("Order not found:", orderCheckError);
-      return new Response(
-        JSON.stringify({ error: "Order not found" }),
-        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      throw new HttpError(404, "ORDER_NOT_FOUND", "Order not found");
     }
 
-    // Check authorization: user must own the order or be an admin
-    if (orderCheck.user_id !== user.id && !isAdmin) {
-      console.error("Forbidden: User does not have access to this order");
-      return new Response(
-        JSON.stringify({ error: "Forbidden" }),
-        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    // If caller is authenticated, enforce ownership/admin check.
+    // If unauthenticated, request is allowed because verify_jwt is disabled by configuration.
+    if (user && orderCheck.user_id !== user.id && !isAdmin) {
+      throw new HttpError(403, "FORBIDDEN", "User does not have access to this order");
     }
 
     // Fetch order details with items
@@ -635,26 +691,29 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Admin email sent:", adminEmailResult);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        customerEmail,
-        adminEmail: adminEmailResult,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return jsonResponse({
+      success: true,
+      requestId,
+      customerEmail,
+      adminEmail: adminEmailResult,
+    });
   } catch (error: any) {
-    console.error("Error sending order notification:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    if (error instanceof HttpError) {
+      console.error("[SEND-ORDER-NOTIFICATION] Handled error", {
+        requestId,
+        code: error.code,
+        status: error.status,
+        message: error.message,
+        details: error.details,
+      });
+      return errorResponse(requestId, error.status, error.code, error.message, error.details);
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[SEND-ORDER-NOTIFICATION] Unhandled error", { requestId, error });
+    return errorResponse(requestId, 500, "INTERNAL_ERROR", "Failed to send order notification", {
+      originalMessage: message,
+    });
   }
 };
 
