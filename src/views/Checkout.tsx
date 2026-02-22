@@ -450,14 +450,40 @@ const Checkout = () => {
           body: checkoutPayload,
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            apikey: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
           },
         });
 
-      let { data: stripeData, error: stripeError } = await invokeWithToken(session.access_token);
+      const isAuthEdgeError = (err: any) => {
+        const message = String(err?.message ?? "").toLowerCase();
+        const name = String(err?.name ?? "").toLowerCase();
+        const status = Number(err?.context?.status ?? err?.status ?? 0);
+        return (
+          status === 401 ||
+          message.includes("401") ||
+          message.includes("invalid jwt") ||
+          message.includes("jwt expired") ||
+          message.includes("token expired") ||
+          message.includes("unauthorized") ||
+          name.includes("functionsautherror")
+        );
+      };
 
-      // If token is stale/invalid, refresh once and retry.
-      if (stripeError?.message?.toLowerCase().includes("invalid jwt")) {
+      let accessToken = session.access_token;
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const expiresSoon = typeof session.expires_at === "number" && (session.expires_at - nowSeconds) < 120;
+
+      // Refresh proactively if the token is about to expire during checkout flow.
+      if (expiresSoon) {
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError && refreshed.session?.access_token) {
+          accessToken = refreshed.session.access_token;
+        }
+      }
+
+      let { data: stripeData, error: stripeError } = await invokeWithToken(accessToken);
+
+      // Retry once on auth-related failures (expired/invalid JWT, 401, etc.)
+      if (stripeError && isAuthEdgeError(stripeError)) {
         const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
         if (!refreshError && refreshed.session?.access_token) {
           ({ data: stripeData, error: stripeError } = await invokeWithToken(refreshed.session.access_token));
