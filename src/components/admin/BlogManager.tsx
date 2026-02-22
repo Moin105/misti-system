@@ -44,6 +44,7 @@ interface BlogCategory {
   name: string;
   slug: string;
   color: string;
+  icon_name?: string | null;
 }
 
 const BlogManager = () => {
@@ -84,28 +85,29 @@ const BlogManager = () => {
   };
 
   const fetchPosts = async () => {
-    const { data, error } = await supabase
-      .from("blog_posts")
-      .select(`
-        *,
-        blog_categories (
-          id,
-          name,
-          slug,
-          color,
-          icon_name
-        )
-      `)
-      .order("created_at", { ascending: false });
+    const [postsRes, categoriesRes] = await Promise.all([
+      supabase
+        .from("blog_posts")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("blog_categories")
+        .select("id, name, slug, color, icon_name"),
+    ]);
 
-    if (error) {
+    if (postsRes.error) {
       toast({
         title: "Error fetching posts",
-        description: error.message,
+        description: postsRes.error.message,
         variant: "destructive",
       });
     } else {
-      setPosts(data || []);
+      const categoryMap = new Map((categoriesRes.data || []).map((cat) => [cat.id, cat]));
+      const enrichedPosts = (postsRes.data || []).map((post) => ({
+        ...post,
+        blog_categories: post.category_id ? categoryMap.get(post.category_id) || null : null,
+      }));
+      setPosts(enrichedPosts as BlogPost[]);
     }
     setLoading(false);
   };
@@ -116,14 +118,31 @@ const BlogManager = () => {
     return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
   };
 
+  const normalizeSlug = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const readTime = estimateReadTime(formData.content);
+    const normalizedSlug = normalizeSlug(formData.slug || formData.title);
+
+    if (!normalizedSlug) {
+      toast({
+        title: "Invalid slug",
+        description: "Please enter a valid title or slug.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const postData = {
       title: formData.title,
-      slug: formData.slug,
+      slug: normalizedSlug,
       content: formData.content,
       excerpt: formData.excerpt || null,
       meta_description: formData.meta_description || null,
@@ -151,7 +170,10 @@ const BlogManager = () => {
           variant: "destructive",
         });
       } else {
-        toast({ title: "Post updated successfully" });
+        toast({ 
+          title: formData.is_published ? "Post updated successfully" : "Draft saved",
+          description: formData.is_published ? `Live at /blog/${normalizedSlug}` : "Enable Published to make this page public.",
+        });
         await refreshAdminData(['/rest/v1/blog_posts'], ['blog-posts']);
         resetForm();
         fetchPosts();
@@ -168,7 +190,10 @@ const BlogManager = () => {
           variant: "destructive",
         });
       } else {
-        toast({ title: "Post created successfully" });
+        toast({ 
+          title: formData.is_published ? "Post created successfully" : "Draft saved",
+          description: formData.is_published ? `Live at /blog/${normalizedSlug}` : "Enable Published to create a public page.",
+        });
         await refreshAdminData(['/rest/v1/blog_posts'], ['blog-posts']);
         resetForm();
         fetchPosts();

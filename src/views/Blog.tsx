@@ -86,19 +86,25 @@ const Blog = () => {
   };
 
   const fetchPosts = async () => {
-    // Fetch posts with joined category data to avoid N+1 queries
-    const { data, error } = await supabase
-      .from("blog_posts")
-      .select(`
-        id, title, slug, excerpt, created_at, featured_image, author_name, read_time_minutes, category_id,
-        blog_categories(id, name, slug, icon_name, color)
-      `)
-      .eq("is_published", true)
-      .eq("is_legal_page", false)
-      .order("created_at", { ascending: false });
+    const [postsRes, categoriesRes] = await Promise.all([
+      supabase
+        .from("blog_posts")
+        .select("id, title, slug, excerpt, created_at, featured_image, author_name, read_time_minutes, category_id")
+        .eq("is_published", true)
+        .eq("is_legal_page", false)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("blog_categories")
+        .select("id, name, slug, icon_name, color"),
+    ]);
 
-    if (!error && data) {
-      setPosts(data);
+    if (!postsRes.error && postsRes.data) {
+      const categoryMap = new Map((categoriesRes.data || []).map((cat) => [cat.id, cat]));
+      const postsWithCategory = postsRes.data.map((post) => ({
+        ...post,
+        blog_categories: post.category_id ? categoryMap.get(post.category_id) || null : null,
+      }));
+      setPosts(postsWithCategory);
     }
     setLoading(false);
   };
