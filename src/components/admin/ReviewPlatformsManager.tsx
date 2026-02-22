@@ -49,7 +49,7 @@ const ReviewPlatformsManager = () => {
     sort_order: 0,
   });
 
-  const { data: platforms, isLoading } = useQuery({
+  const { data: platforms, isLoading, refetch: refetchPlatforms } = useQuery({
     queryKey: ["review-platforms-admin"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -63,15 +63,25 @@ const ReviewPlatformsManager = () => {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { error } = await supabase.from("review_platforms").insert([data]);
+      const { data: createdPlatform, error } = await supabase
+        .from("review_platforms")
+        .insert([data])
+        .select("*")
+        .single();
       if (error) throw error;
+      return createdPlatform;
     },
-    onSuccess: async () => {
+    onSuccess: async (createdPlatform) => {
+      queryClient.setQueryData(["review-platforms-admin"], (prev: any[] | undefined) => {
+        const next = [...(prev || []), createdPlatform];
+        return next.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      });
       await refreshReviewPlatformCaches();
       await queryClient.invalidateQueries({ queryKey: ["review-platforms-admin"] });
       await queryClient.invalidateQueries({ queryKey: ["review-platforms-for-reviews"] });
       await queryClient.invalidateQueries({ queryKey: ["review-platforms"] });
       await queryClient.invalidateQueries({ queryKey: ["initial-page-data"] });
+      await refetchPlatforms();
       toast({ title: "Platform created successfully" });
       setIsDialogOpen(false);
       resetForm();
@@ -87,18 +97,28 @@ const ReviewPlatformsManager = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { error } = await supabase
+      const { data: updatedPlatform, error } = await supabase
         .from("review_platforms")
         .update(data)
-        .eq("id", id);
+        .eq("id", id)
+        .select("*")
+        .single();
       if (error) throw error;
+      return updatedPlatform;
     },
-    onSuccess: async () => {
+    onSuccess: async (updatedPlatform) => {
+      queryClient.setQueryData(["review-platforms-admin"], (prev: any[] | undefined) => {
+        const next = (prev || []).map((platform) =>
+          platform.id === updatedPlatform.id ? updatedPlatform : platform
+        );
+        return next.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      });
       await refreshReviewPlatformCaches();
       await queryClient.invalidateQueries({ queryKey: ["review-platforms-admin"] });
       await queryClient.invalidateQueries({ queryKey: ["review-platforms-for-reviews"] });
       await queryClient.invalidateQueries({ queryKey: ["review-platforms"] });
       await queryClient.invalidateQueries({ queryKey: ["initial-page-data"] });
+      await refetchPlatforms();
       toast({ title: "Platform updated successfully" });
       setIsDialogOpen(false);
       resetForm();
@@ -119,13 +139,18 @@ const ReviewPlatformsManager = () => {
         .delete()
         .eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: async () => {
+    onSuccess: async (deletedId) => {
+      queryClient.setQueryData(["review-platforms-admin"], (prev: any[] | undefined) =>
+        (prev || []).filter((platform) => platform.id !== deletedId)
+      );
       await refreshReviewPlatformCaches();
       await queryClient.invalidateQueries({ queryKey: ["review-platforms-admin"] });
       await queryClient.invalidateQueries({ queryKey: ["review-platforms-for-reviews"] });
       await queryClient.invalidateQueries({ queryKey: ["review-platforms"] });
       await queryClient.invalidateQueries({ queryKey: ["initial-page-data"] });
+      await refetchPlatforms();
       toast({ title: "Platform deleted successfully" });
     },
     onError: (error: any) => {
