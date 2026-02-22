@@ -15,6 +15,8 @@ type SocialLink = {
   icon_name: string;
 };
 
+type FooterLinkItem = { id: string; label: string; url: string };
+
 interface FooterData {
   sections: FooterSection[];
   socialLinks: SocialLink[];
@@ -76,23 +78,35 @@ export function useDeferredFooterData() {
       let socialLinks: SocialLink[] = [];
 
       if (sectionsRes.data && linksRes.data) {
+        const legalPageLinks: FooterLinkItem[] = (legalPagesRes.data ?? []).map((page) => ({
+          id: `legal-${page.slug}`,
+          label: page.title,
+          url: `/blog/${page.slug}`,
+        }));
+
+        const mergeUniqueLinks = (links: FooterLinkItem[]) => {
+          const seen = new Set<string>();
+          return links.filter((link) => {
+            const key = `${link.url.toLowerCase()}::${link.label.toLowerCase()}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        };
+
         sections = sectionsRes.data.map((section) => {
-          const sectionLinks = linksRes.data.filter((link) => link.section_id === section.id).map((link) => ({
+          const sectionLinks: FooterLinkItem[] = linksRes.data.filter((link) => link.section_id === section.id).map((link) => ({
             id: link.id,
             label: link.label,
             url: link.url,
           }));
 
-          if (section.slug === "legal" && legalPagesRes.data) {
-            const legalPageLinks = legalPagesRes.data.map((page) => ({
-              id: page.slug,
-              label: page.title,
-              url: `/blog/${page.slug}`,
-            }));
+          const isLegalSection = section.slug.trim().toLowerCase() === "legal";
+          if (isLegalSection) {
             return {
               id: section.id,
               title: section.title,
-              links: [...sectionLinks, ...legalPageLinks],
+              links: mergeUniqueLinks([...sectionLinks, ...legalPageLinks]),
             };
           }
 
@@ -102,6 +116,16 @@ export function useDeferredFooterData() {
             links: sectionLinks,
           };
         });
+
+        // If CMS legal section is temporarily missing, keep legal links visible.
+        const hasLegalSection = sections.some((section) => section.title.trim().toLowerCase() === "legal");
+        if (!hasLegalSection && legalPageLinks.length > 0) {
+          sections.push({
+            id: "fallback-legal",
+            title: "Legal",
+            links: legalPageLinks,
+          });
+        }
       }
 
       if (socialRes.data) {

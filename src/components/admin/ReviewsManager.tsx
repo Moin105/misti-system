@@ -51,8 +51,8 @@ const ReviewsManager = () => {
     is_active: true,
   });
 
-  const { data: platforms } = useQuery({
-    queryKey: ["review-platforms-admin"],
+  const { data: platforms, refetch: refetchPlatforms } = useQuery({
+    queryKey: ["review-platforms-for-reviews"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("review_platforms")
@@ -61,6 +61,8 @@ const ReviewsManager = () => {
       if (error) throw error;
       return data;
     },
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: reviews, isLoading } = useQuery({
@@ -192,7 +194,15 @@ const ReviewsManager = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Reviews</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (open) {
+              refetchPlatforms();
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
               <Plus className="w-4 h-4 mr-2" />

@@ -24,14 +24,17 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const apiKey = Deno.env.get('EXCHANGE_RATE_API_KEY');
+    const apiKey = Deno.env.get('EXCHANGE_RATE_API_KEY') ?? Deno.env.get('EXCHANGE_API_KEY');
+    const apiUrl = apiKey
+      ? `https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`
+      : 'https://open.er-api.com/v6/latest/USD';
+
     if (!apiKey) {
-      console.error('EXCHANGE_RATE_API_KEY is not configured');
-      throw new Error('EXCHANGE_RATE_API_KEY is not configured');
+      console.warn('EXCHANGE_RATE_API_KEY is not configured, using fallback provider');
     }
 
-    console.log('Fetching exchange rates from API...');
-    const response = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`);
+    console.log('Fetching exchange rates from API...', { hasApiKey: !!apiKey });
+    const response = await fetch(apiUrl);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -42,13 +45,14 @@ serve(async (req) => {
     const data = await response.json();
     console.log('API response received:', { result: data.result, hasRates: !!data.conversion_rates });
     
-    if (data.result !== 'success') {
+    if (data.result && data.result !== 'success') {
       const errorType = data['error-type'] || 'Unknown';
       console.error('API returned non-success result:', errorType);
       throw new Error(`Exchange rate API error: ${errorType}`);
     }
-    
-    const eurRate = data.conversion_rates?.EUR;
+
+    const rates = data.conversion_rates || data.rates;
+    const eurRate = rates?.EUR;
     if (!eurRate || typeof eurRate !== 'number') {
       console.error('EUR rate not found or invalid:', eurRate);
       throw new Error('EUR rate not found in API response');
@@ -56,32 +60,61 @@ serve(async (req) => {
     
     console.log('Fetched EUR rate:', eurRate);
 
+    const upsertRate = async (targetCurrency: 'EUR' | 'USD', rate: number) => {
+      const rpcPayload = {
+        p_base_currency: 'USD',
+        p_target_currency: targetCurrency,
+        p_rate: rate,
+      };
+
+      const { error: rpcError } = await supabase.rpc('update_exchange_rate', rpcPayload);
+      if (!rpcError) return;
+
+      console.warn(`RPC update_exchange_rate failed for ${targetCurrency}, falling back to direct update/insert`, rpcError);
+
+      const nowIso = new Date().toISOString();
+      const { data: updatedRows, error: updateError } = await supabase
+        .from('exchange_rates')
+        .update({
+          rate,
+          last_updated: nowIso,
+        })
+        .eq('base_currency', 'USD')
+        .eq('target_currency', targetCurrency)
+        .select('id');
+
+      if (updateError) {
+        throw new Error(
+          `Failed to update ${targetCurrency} rate (rpc: ${rpcError.message}; update: ${updateError.message})`
+        );
+      }
+
+      if ((updatedRows?.length ?? 0) === 0) {
+        const { error: insertError } = await supabase
+          .from('exchange_rates')
+          .insert({
+            base_currency: 'USD',
+            target_currency: targetCurrency,
+            rate,
+            last_updated: nowIso,
+          });
+
+        if (insertError) {
+          throw new Error(
+            `Failed to update ${targetCurrency} rate (rpc: ${rpcError.message}; insert: ${insertError.message})`
+          );
+        }
+      }
+    };
+
     // Update USD to EUR rate
     console.log('Updating USD to EUR rate...');
-    const { data: eurData, error: eurError } = await supabase.rpc('update_exchange_rate', {
-      p_base_currency: 'USD',
-      p_target_currency: 'EUR',
-      p_rate: eurRate
-    });
-
-    if (eurError) {
-      console.error('Error updating EUR rate:', JSON.stringify(eurError, null, 2));
-      throw new Error(`Failed to update EUR rate: ${eurError.message || JSON.stringify(eurError)}`);
-    }
+    await upsertRate('EUR', eurRate);
     console.log('USD to EUR rate updated successfully');
 
     // Update USD to USD rate
     console.log('Updating USD to USD rate...');
-    const { data: usdData, error: usdError } = await supabase.rpc('update_exchange_rate', {
-      p_base_currency: 'USD',
-      p_target_currency: 'USD',
-      p_rate: 1.0
-    });
-
-    if (usdError) {
-      console.error('Error updating USD rate:', JSON.stringify(usdError, null, 2));
-      throw new Error(`Failed to update USD rate: ${usdError.message || JSON.stringify(usdError)}`);
-    }
+    await upsertRate('USD', 1.0);
     console.log('USD to USD rate updated successfully');
 
     console.log('Successfully updated all exchange rates');
