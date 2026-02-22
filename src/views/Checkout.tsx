@@ -445,47 +445,28 @@ const Checkout = () => {
         couponCode: appliedCoupon?.code,
       };
 
-      const invokeCheckoutSession = () =>
-        supabase.functions.invoke("create-checkout-session", {
-          body: checkoutPayload,
-        });
+      // Call this function with apikey only (no Authorization header) because verify_jwt=false.
+      // This bypasses stale/invalid JWT issues at the edge gateway.
+      const response = await fetch(
+        `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-checkout-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify(checkoutPayload),
+        },
+      );
 
-      const isAuthEdgeError = (err: any) => {
-        const message = String(err?.message ?? "").toLowerCase();
-        const name = String(err?.name ?? "").toLowerCase();
-        const status = Number(err?.context?.status ?? err?.status ?? 0);
-        return (
-          status === 401 ||
-          message.includes("401") ||
-          message.includes("invalid jwt") ||
-          message.includes("jwt expired") ||
-          message.includes("token expired") ||
-          message.includes("unauthorized") ||
-          name.includes("functionsautherror")
-        );
-      };
-
-      const nowSeconds = Math.floor(Date.now() / 1000);
-      const expiresSoon = typeof session.expires_at === "number" && (session.expires_at - nowSeconds) < 120;
-
-      // Best-effort refresh before invoke to avoid stale token edge cases in long-lived tabs.
-      // If refresh fails, we still try with the current token and handle retry below.
-      const { data: preRefreshed, error: preRefreshError } = await supabase.auth.refreshSession();
-      if (preRefreshError && expiresSoon) {
-        throw new Error("Your session expired. Please log in again and retry checkout.");
+      const stripeData = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message =
+          stripeData?.error ||
+          stripeData?.message ||
+          `Checkout request failed with status ${response.status}`;
+        throw new Error(message);
       }
-
-      let { data: stripeData, error: stripeError } = await invokeCheckoutSession();
-
-      // Retry once on auth-related failures (expired/invalid JWT, 401, etc.)
-      if (stripeError && isAuthEdgeError(stripeError)) {
-        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-        if (!refreshError && refreshed.session) {
-          ({ data: stripeData, error: stripeError } = await invokeCheckoutSession());
-        }
-      }
-
-      if (stripeError) throw stripeError;
 
       if (stripeData?.url) {
         // Redirect to Stripe Checkout in same tab
