@@ -12,6 +12,39 @@ const EmailTestManager = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const invokeWithJwtRetry = async (functionName: string, body: Record<string, unknown>) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("Session missing. Please log in again.");
+    }
+
+    const invokeWithToken = (token: string) =>
+      supabase.functions.invoke(functionName, {
+        body,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+    let { data, error } = await invokeWithToken(session.access_token);
+    if (!error) return data;
+
+    const status = Number((error as any)?.context?.status ?? (error as any)?.status ?? 0);
+    const message = String(error.message ?? "").toLowerCase();
+    const isJwtError = status === 401 || message.includes("invalid jwt") || message.includes("unauthorized");
+
+    if (isJwtError) {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !refreshed.session?.access_token) {
+        throw new Error("Session expired. Please log in again.");
+      }
+
+      ({ data, error } = await invokeWithToken(refreshed.session.access_token));
+      if (!error) return data;
+    }
+
+    const finalStatus = Number((error as any)?.context?.status ?? (error as any)?.status ?? 0);
+    throw new Error(`${error.message || "Function call failed"}${finalStatus ? ` (status: ${finalStatus})` : ""}`);
+  };
+
   const sendWelcomeEmailTest = async () => {
     if (!email) {
       toast({ title: "Error", description: "Please enter an email address", variant: "destructive" });
@@ -64,10 +97,7 @@ const EmailTestManager = () => {
         throw new Error("No orders found. Create an order first.");
       }
 
-      const { error } = await supabase.functions.invoke('send-order-notification', {
-        body: { orderId: orders[0].id, type: 'created' }
-      });
-      if (error) throw error;
+      await invokeWithJwtRetry('send-order-notification', { orderId: orders[0].id, type: 'created' });
       toast({ title: "Order Notification Sent!", description: "Test order confirmation sent" });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -90,10 +120,11 @@ const EmailTestManager = () => {
         throw new Error("No orders found. Create an order first.");
       }
 
-      const { error } = await supabase.functions.invoke('send-order-notification', {
-        body: { orderId: orders[0].id, type: 'status_changed', newStatus: 'processing' }
+      await invokeWithJwtRetry('send-order-notification', {
+        orderId: orders[0].id,
+        type: 'status_changed',
+        newStatus: 'processing',
       });
-      if (error) throw error;
       toast({ title: "Status Change Email Sent!", description: "Test status update sent" });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });

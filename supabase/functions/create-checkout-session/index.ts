@@ -67,6 +67,12 @@ function errorResponse(
   );
 }
 
+function redactSensitiveMessage(message: string) {
+  return message
+    .replace(/\b(sk|pk|rk|mk)_[A-Za-z0-9_]+\b/g, "$1_***")
+    .replace(/bearer\s+[A-Za-z0-9\-_\.]+/gi, "Bearer ***");
+}
+
 // Validation schema for checkout requests
 const checkoutRequestSchema = z.object({
   orderId: z.string().uuid("Invalid order ID format"),
@@ -141,6 +147,16 @@ serve(async (req) => {
       }
     } else {
       console.log("[CREATE-CHECKOUT] No bearer token provided, using order verification path", { requestId });
+    }
+
+    const normalizedStripeSecretKey = stripeSecretKey.trim();
+    if (!/^sk_(test|live)_/.test(normalizedStripeSecretKey)) {
+      throw new HttpError(
+        500,
+        "INVALID_STRIPE_KEY_CONFIG",
+        "Server payment configuration error",
+        { hint: "STRIPE_SECRET_KEY must start with sk_test_ or sk_live_" },
+      );
     }
 
     // Rate limit: prefer user id, fallback to caller IP.
@@ -243,7 +259,7 @@ serve(async (req) => {
       amount: totalAmount,
     });
 
-    const stripe = new Stripe(stripeSecretKey, {
+    const stripe = new Stripe(normalizedStripeSecretKey, {
       apiVersion: "2025-08-27.basil",
     });
 
@@ -336,6 +352,7 @@ serve(async (req) => {
     }
 
     const maybeMessage = error instanceof Error ? error.message : String(error);
+    const safeMessage = redactSensitiveMessage(maybeMessage);
     const isLikelyAuthFailure = /401|unauthorized|invalid api key|invalid token/i.test(maybeMessage);
     const fallbackCode = isLikelyAuthFailure ? "UPSTREAM_AUTH_FAILURE" : "INTERNAL_ERROR";
     const fallbackMessage = isLikelyAuthFailure
@@ -344,7 +361,7 @@ serve(async (req) => {
 
     console.error("[CREATE-CHECKOUT] Unhandled error", { requestId, error });
     return errorResponse(requestId, isLikelyAuthFailure ? 502 : 500, fallbackCode, fallbackMessage, {
-      originalMessage: maybeMessage,
+      originalMessage: safeMessage,
     });
   }
 });
