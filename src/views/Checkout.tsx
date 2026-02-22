@@ -445,12 +445,9 @@ const Checkout = () => {
         couponCode: appliedCoupon?.code,
       };
 
-      const invokeWithToken = async (accessToken: string) =>
+      const invokeCheckoutSession = () =>
         supabase.functions.invoke("create-checkout-session", {
           body: checkoutPayload,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
         });
 
       const isAuthEdgeError = (err: any) => {
@@ -468,26 +465,23 @@ const Checkout = () => {
         );
       };
 
-      let accessToken = session.access_token;
       const nowSeconds = Math.floor(Date.now() / 1000);
       const expiresSoon = typeof session.expires_at === "number" && (session.expires_at - nowSeconds) < 120;
 
       // Best-effort refresh before invoke to avoid stale token edge cases in long-lived tabs.
       // If refresh fails, we still try with the current token and handle retry below.
       const { data: preRefreshed, error: preRefreshError } = await supabase.auth.refreshSession();
-      if (!preRefreshError && preRefreshed.session?.access_token) {
-        accessToken = preRefreshed.session.access_token;
-      } else if (expiresSoon) {
+      if (preRefreshError && expiresSoon) {
         throw new Error("Your session expired. Please log in again and retry checkout.");
       }
 
-      let { data: stripeData, error: stripeError } = await invokeWithToken(accessToken);
+      let { data: stripeData, error: stripeError } = await invokeCheckoutSession();
 
       // Retry once on auth-related failures (expired/invalid JWT, 401, etc.)
       if (stripeError && isAuthEdgeError(stripeError)) {
         const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-        if (!refreshError && refreshed.session?.access_token) {
-          ({ data: stripeData, error: stripeError } = await invokeWithToken(refreshed.session.access_token));
+        if (!refreshError && refreshed.session) {
+          ({ data: stripeData, error: stripeError } = await invokeCheckoutSession());
         }
       }
 

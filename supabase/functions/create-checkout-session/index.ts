@@ -112,17 +112,17 @@ serve(async (req) => {
           stripeSecretKey: Boolean(stripeSecretKey),
         },
       );
-    }
+  }
 
-    // Use anon key client for optional auth validation
+  // Use anon key client for optional auth validation
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
 
-    // Use service role key client for database queries (bypasses RLS)
-    const supabaseAdmin = createClient(
+  // Use service role key client for database queries (bypasses RLS)
+  const supabaseAdmin = createClient(
       supabaseUrl,
       supabaseServiceRoleKey,
       { auth: { persistSession: false } },
-    );
+  );
 
     const authHeader = req.headers.get("Authorization");
     let user: { id: string; email: string | null } | null = null;
@@ -229,8 +229,8 @@ serve(async (req) => {
         "AMOUNT_MISMATCH",
         "Amount verification failed",
         {
-          expected: orderData.total_amount,
-          received: totalAmount,
+        expected: orderData.total_amount, 
+        received: totalAmount,
           difference: amountDifference,
         },
       );
@@ -261,7 +261,7 @@ serve(async (req) => {
 
     const itemsTotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
     const hasPriceAdjustment = Math.abs(totalAmount - itemsTotal) > 0.01;
-
+    
     if (hasPriceAdjustment) {
       const adjustmentType = totalAmount < itemsTotal ? "discount" : "surcharge";
       console.log("[CREATE-CHECKOUT] Price adjustment detected", {
@@ -273,29 +273,29 @@ serve(async (req) => {
         couponCode: couponCode || "none",
       });
     }
-
-    const lineItems = hasPriceAdjustment
+    
+    const lineItems = hasPriceAdjustment 
       ? [{
-        price_data: {
-          currency: "usd",
-          product_data: {
+          price_data: {
+            currency: "usd",
+            product_data: {
             name: `Order ${orderNumber}${couponCode ? ` (Code: ${couponCode})` : ""}`,
             description: items.map((item) => `${item.name} x${item.quantity}`).join(", "),
-          },
+            },
           unit_amount: Math.round(totalAmount * 100),
-        },
-        quantity: 1,
-      }]
-      : items.map((item) => ({
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: item.name,
           },
+          quantity: 1,
+        }]
+      : items.map((item) => ({
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: item.name,
+            },
           unit_amount: Math.round(item.unitPrice * 100),
-        },
-        quantity: item.quantity,
-      }));
+          },
+          quantity: item.quantity,
+        }));
 
     const origin = req.headers.get("origin") || "https://misti.services";
     const session = await stripe.checkout.sessions.create({
