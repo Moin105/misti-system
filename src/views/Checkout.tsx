@@ -445,27 +445,56 @@ const Checkout = () => {
         couponCode: appliedCoupon?.code,
       };
 
-      // Call this function with apikey only (no Authorization header) because verify_jwt=false.
-      // This bypasses stale/invalid JWT issues at the edge gateway.
-      const response = await fetch(
-        `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-checkout-session`,
-        {
+      const functionUrl = `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-checkout-session`;
+
+      const invokeCheckout = async (accessToken?: string) => {
+        const response = await fetch(functionUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             apikey: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify(checkoutPayload),
-        },
-      );
+        });
 
-      const stripeData = await response.json().catch(() => null);
+        const data = await response.json().catch(() => null);
+        const requestId =
+          response.headers.get("sb-request-id") ||
+          response.headers.get("sb_request_id") ||
+          "n/a";
+
+        return { response, data, requestId };
+      };
+
+      // Try 1: apikey only (works when verify_jwt=false)
+      let result = await invokeCheckout();
+
+      // Try 2: include current access token if gateway still returns 401
+      if (result.response.status === 401) {
+        const latestSession = (await supabase.auth.getSession()).data.session;
+        const token = latestSession?.access_token || session.access_token;
+        if (token) {
+          result = await invokeCheckout(token);
+        }
+      }
+
+      // Try 3: refresh token and retry once more on 401
+      if (result.response.status === 401) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        const refreshedToken = refreshed.session?.access_token;
+        if (refreshedToken) {
+          result = await invokeCheckout(refreshedToken);
+        }
+      }
+
+      const { response, data: stripeData, requestId } = result;
       if (!response.ok) {
-        const message =
+        const serverMessage =
           stripeData?.error ||
           stripeData?.message ||
           `Checkout request failed with status ${response.status}`;
-        throw new Error(message);
+        throw new Error(`${serverMessage} (status: ${response.status}, requestId: ${requestId})`);
       }
 
       if (stripeData?.url) {
