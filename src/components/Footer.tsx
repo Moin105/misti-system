@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Lock, ShieldCheck, BadgeCheck, Facebook, Instagram } from "lucide-react";
+import { Lock, ShieldCheck, BadgeCheck, Facebook, Instagram, Twitter, Youtube, Linkedin, MessageCircle } from "lucide-react";
 import { useCookieConsent } from "@/contexts/CookieConsentContext";
 import { useDeferredFooterData } from "@/hooks/useDeferredFooterData";
 import mistiLogoSrc from "@/assets/misti-logo.png";
+import logoOptimizedSrc from "@/assets/logo-optimized.png";
+import logoSrc from "@/assets/logo.png";
 
 // Ensure logo is a string URL
 const mistiLogo = typeof mistiLogoSrc === 'string' ? mistiLogoSrc : (mistiLogoSrc as any)?.default || (mistiLogoSrc as any)?.src || String(mistiLogoSrc);
@@ -13,11 +15,17 @@ import { DynamicIcon } from "@/components/DynamicIcon";
 const socialIconMap: Record<string, React.ComponentType<any>> = {
   'Facebook': Facebook,
   'Instagram': Instagram,
+  'Twitter': Twitter,
+  'Youtube': Youtube,
+  'Linkedin': Linkedin,
+  'MessageCircle': MessageCircle,
 };
 
 const Footer = () => {
   const { openPreferences } = useCookieConsent();
   const [showStripeIframe, setShowStripeIframe] = useState(false);
+  const [footerLogo, setFooterLogo] = useState(mistiLogo);
+  const [logoFallbackIdx, setLogoFallbackIdx] = useState(0);
 
   const stripeRef = useRef<HTMLDivElement>(null);
 
@@ -49,23 +57,21 @@ const Footer = () => {
     return () => observer.disconnect();
   }, []);
 
-  const renderIcon = (iconName: string) => {
-    if (!iconName) return null;
-    
-    // Normalize icon name: capitalize first letter, lowercase rest
-    const normalizedName = iconName.charAt(0).toUpperCase() + iconName.slice(1).toLowerCase();
-    
-    // Map to correct icon names
-    const iconNameMap: Record<string, string> = {
-      'facebook': 'Facebook',
-      'instagram': 'Instagram',
-      'twitter': 'Twitter',
-      'youtube': 'Youtube',
-      'linkedin': 'Linkedin',
-      'discord': 'MessageCircle',
-    };
-    const finalName = iconNameMap[normalizedName.toLowerCase()] || normalizedName;
-    
+  const renderIcon = (iconName: string, platform?: string, url?: string) => {
+    const candidates = [iconName, platform, url].filter(Boolean).join(" ").toLowerCase();
+
+    const socialAliases: Array<{ test: RegExp; icon: string }> = [
+      { test: /facebook|fb/, icon: "Facebook" },
+      { test: /instagram|insta/, icon: "Instagram" },
+      { test: /twitter|x\.com/, icon: "Twitter" },
+      { test: /youtube|youtu\.be/, icon: "Youtube" },
+      { test: /linkedin/, icon: "Linkedin" },
+      { test: /discord/, icon: "MessageCircle" },
+    ];
+
+    const matched = socialAliases.find((entry) => entry.test.test(candidates));
+    const finalName = matched?.icon || (iconName || platform || "").trim();
+
     // Try direct icon first (synchronous, no async loading)
     const DirectIcon = socialIconMap[finalName];
     if (DirectIcon) {
@@ -115,17 +121,25 @@ const Footer = () => {
           <div>
             <div className="mb-6">
               <img
-                src={mistiLogo}
+                src={footerLogo}
                 alt="Misti Services"
                 width={260}
                 height={48}
                 className="h-12 w-auto object-contain"
+                onError={() => {
+                  const fallbacks = [logoOptimizedSrc, logoSrc];
+                  const next = fallbacks[logoFallbackIdx];
+                  if (next) {
+                    setFooterLogo(next);
+                    setLogoFallbackIdx((i) => i + 1);
+                  }
+                }}
               />
             </div>
             {socialLinks.length > 0 && (
               <div className="flex gap-4 mb-6">
                 {socialLinks.map((social) => {
-                  const icon = renderIcon(social.icon_name);
+                  const icon = renderIcon(social.icon_name, social.platform, social.url);
                   return (
                     <a
                       key={social.id}
@@ -241,15 +255,18 @@ const Footer = () => {
                   />
                 )}
               </div>
-              {/* Trustpilot Link - Simple text link matching design */}
+              {/* Trustpilot badge with fixed sizing to avoid scaling issues */}
               <a 
                 href="https://www.trustpilot.com/review/misti.services" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-base text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
-                style={{ fontSize: '16px' }}
+                className="h-9 px-3 rounded-md border border-white/15 bg-white/5
+                           text-sm text-muted-foreground hover:text-primary
+                           hover:border-primary/40 transition-colors whitespace-nowrap
+                           inline-flex items-center gap-2 shrink-0"
               >
-                Trustpilot
+                <span className="text-green-400 leading-none">★★★★★</span>
+                <span>Trustpilot</span>
               </a>
             </div>
           </div>
