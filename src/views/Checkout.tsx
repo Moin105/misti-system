@@ -472,12 +472,13 @@ const Checkout = () => {
       const nowSeconds = Math.floor(Date.now() / 1000);
       const expiresSoon = typeof session.expires_at === "number" && (session.expires_at - nowSeconds) < 120;
 
-      // Refresh proactively if the token is about to expire during checkout flow.
-      if (expiresSoon) {
-        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-        if (!refreshError && refreshed.session?.access_token) {
-          accessToken = refreshed.session.access_token;
-        }
+      // Best-effort refresh before invoke to avoid stale token edge cases in long-lived tabs.
+      // If refresh fails, we still try with the current token and handle retry below.
+      const { data: preRefreshed, error: preRefreshError } = await supabase.auth.refreshSession();
+      if (!preRefreshError && preRefreshed.session?.access_token) {
+        accessToken = preRefreshed.session.access_token;
+      } else if (expiresSoon) {
+        throw new Error("Your session expired. Please log in again and retry checkout.");
       }
 
       let { data: stripeData, error: stripeError } = await invokeWithToken(accessToken);
