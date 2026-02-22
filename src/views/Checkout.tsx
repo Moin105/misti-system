@@ -354,10 +354,13 @@ const Checkout = () => {
     // Option B: Earn cashback on amount after coupon but before cashback used
     const cashbackEarned = (subtotal * cashbackPercentage) / 100;
 
-    // Create order with pending status
-    const { data: order, error: orderError } = await supabase
+    // Create order with pending status (avoid post-insert select to prevent RLS readback failures)
+    const orderId = crypto.randomUUID();
+    const orderNumber = `ORD-${Date.now()}`;
+    const { error: orderError } = await supabase
       .from("orders")
       .insert([{
+        id: orderId,
         user_id: session.user.id,
         customer_name: customerName,
         customer_email: customerEmail,
@@ -369,32 +372,40 @@ const Checkout = () => {
         cashback_earned: cashbackEarned,
         notes: notes || null,
         status: "pending" as const,
-        order_number: `ORD-${Date.now()}`,
+        order_number: orderNumber,
         coupon_id: appliedCoupon?.coupon_id || null,
         coupon_discount: couponDiscount,
         referrer_id: appliedReferral?.referrer_id || null,
         referral_discount: referralDiscount,
-      }])
-      .select()
-      .single();
+      }]);
 
-    if (orderError || !order) {
+    if (orderError) {
       toast({
         title: "Error",
-        description: "Failed to create order",
+        description: `Failed to create order: ${orderError.message}`,
         variant: "destructive",
       });
       setLoading(false);
       return;
     }
 
-    // Create order items
+    const toSafeQuantity = (value: unknown) => {
+      const parsed = Math.round(Number(value));
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    };
+
+    const toSafeNumber = (value: unknown, fallback: number = 0) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    // Create order items (sanitize payload to match DB integer/numeric types)
     const orderItems = items.map(item => ({
-      order_id: order.id,
+      order_id: orderId,
       product_id: item.product_id,
       product_name: item.product_name,
-      quantity: item.quantity,
-      unit_price: item.base_price,
+      quantity: toSafeQuantity(item.quantity),
+      unit_price: toSafeNumber(item.base_price, 0),
       selected_options: item.selected_options,
     }));
 
@@ -424,13 +435,13 @@ const Checkout = () => {
         "create-checkout-session",
         {
           body: {
-            orderId: order.id,
-            orderNumber: order.order_number,
+            orderId,
+            orderNumber,
             totalAmount: finalTotal,
             items: items.map(item => ({
               name: item.product_name,
-              quantity: item.quantity,
-              unitPrice: item.total_price,
+              quantity: toSafeQuantity(item.quantity),
+              unitPrice: toSafeNumber(item.total_price, 0),
             })),
             couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
             couponCode: appliedCoupon?.code,
