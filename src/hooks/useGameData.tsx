@@ -47,28 +47,30 @@ export interface Product {
  * Eliminates waterfall: game → categories
  */
 export const fetchGameWithCategoriesData = async (gameSlug: string) => {
-  // Single query that fetches game with embedded categories
+  // Fetch game first, then categories by explicit foreign key.
+  // This avoids occasional wrong/missing embedded relation results from schema cache drift.
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select(`
-      *,
-      categories(*)
-    `)
+    .select("*")
     .eq("slug", gameSlug.trim().toLowerCase())
     .eq("is_active", true)
-    .eq("categories.is_active", true)
-    .order("sort_order", { referencedTable: "categories", ascending: true })
     .maybeSingle();
 
   if (gameError) throw gameError;
   if (!game) return { game: null, categories: [] };
 
-  // Extract categories from nested result and flatten game
-  const { categories: nestedCategories, ...gameData } = game;
+  const { data: categories, error: categoriesError } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("game_id", game.id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  if (categoriesError) throw categoriesError;
 
   return {
-    game: gameData as Game,
-    categories: (nestedCategories || []) as Category[],
+    game: game as Game,
+    categories: (categories || []) as Category[],
   };
 };
 

@@ -19,6 +19,8 @@ interface BlogPost {
   slug: string;
   content: string;
   created_at: string;
+  is_published?: boolean;
+  is_legal_page?: boolean;
   excerpt?: string;
   meta_description?: string;
   meta_keywords?: string;
@@ -32,6 +34,7 @@ const BlogPost = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState<BlogPost | null>(null);
+  const [isUnpublishedLegalPage, setIsUnpublishedLegalPage] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,14 +70,19 @@ const BlogPost = () => {
   const fetchPost = async () => {
     const { data, error } = await supabase
       .from("blog_posts")
-      .select("id, title, slug, content, created_at, excerpt, meta_description, meta_keywords, featured_image, author_name, read_time_minutes, canonical_url")
+      .select("id, title, slug, content, created_at, is_published, is_legal_page, excerpt, meta_description, meta_keywords, featured_image, author_name, read_time_minutes, canonical_url")
       .eq("slug", slug)
-      .eq("is_published", true)
       .maybeSingle();
 
     if (error || !data) {
       navigate("/404");
+    } else if (!data.is_published && data.is_legal_page) {
+      setIsUnpublishedLegalPage(true);
+      setPost(null);
+    } else if (!data.is_published) {
+      navigate("/404");
     } else {
+      setIsUnpublishedLegalPage(false);
       setPost(data);
     }
     setLoading(false);
@@ -169,6 +177,16 @@ const BlogPost = () => {
                   <Skeleton className="h-6 w-1/2 mb-8" />
                   <Skeleton className="h-64 w-full" />
                 </>
+              ) : isUnpublishedLegalPage ? (
+                <div className="rounded-xl border bg-card p-8 text-center">
+                  <h1 className="text-3xl font-bold mb-3">Legal page is not published yet</h1>
+                  <p className="text-muted-foreground mb-6">
+                    This legal page exists, but it is currently unpublished.
+                  </p>
+                  <Link to="/blog">
+                    <Button variant="outline">Back to Blog</Button>
+                  </Link>
+                </div>
               ) : post ? (
                 <>
                   <h1 className="text-5xl font-bold mb-6 leading-tight">
