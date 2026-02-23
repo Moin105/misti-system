@@ -5,6 +5,11 @@ const SITE_NAME = "misti.services";
 const SITE_URL = "https://misti.services";
 const DEFAULT_OG_IMAGE =
   "https://storage.googleapis.com/gpt-engineer-file-uploads/dATtYjrZg8XQKUHNOV3bqcwDO6T2/social-images/social-1760973850614-favicon%20png.png";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.SUPABASE_ANON_KEY;
 
 function humanize(slug: string) {
   return slug
@@ -16,6 +21,28 @@ function humanize(slug: string) {
 
 function withCanonical(pathname: string) {
   return pathname === "/" ? SITE_URL : `${SITE_URL}${pathname}`;
+}
+
+function toAbsoluteUrl(value?: string | null): string | null {
+  if (!value) return null;
+  return value.startsWith("http://") || value.startsWith("https://")
+    ? value
+    : `${SITE_URL}${value.startsWith("/") ? value : `/${value}`}`;
+}
+
+async function fetchFromSupabase<T>(table: string, select: string, filters: string[]): Promise<T | null> {
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) return null;
+  const query = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}&${filters.join("&")}&limit=1`;
+  const response = await fetch(query, {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+  const rows = (await response.json()) as T[];
+  return rows?.[0] ?? null;
 }
 
 function baseMetadata(pathname: string, title: string, description: string): Metadata {
@@ -194,4 +221,209 @@ export function buildMetadataForPath(pathname: string): Metadata {
     default:
       return baseMetadata(pathname, "misti.services", "Professional gaming boost services.");
   }
+}
+
+export async function buildMetadataForPathAsync(pathname: string): Promise<Metadata> {
+  const resolved = resolveRoute(pathname);
+  if (!resolved) return buildMetadataForPath(pathname);
+
+  try {
+    if (resolved.key === "services") {
+      const gameSlug = resolved.params.gameSlug;
+      const categorySlug = resolved.params.categorySlug;
+      if (!gameSlug) return buildMetadataForPath(pathname);
+
+      const game = await fetchFromSupabase<{
+        id: string;
+        name: string;
+        description: string | null;
+        image_url: string | null;
+        meta_title: string | null;
+        meta_description: string | null;
+        meta_keywords: string | null;
+        og_image: string | null;
+        canonical_url: string | null;
+        robots: string | null;
+      }>("games", "id,name,description,image_url,meta_title,meta_description,meta_keywords,og_image,canonical_url,robots", [
+        `slug=eq.${encodeURIComponent(gameSlug)}`,
+        "is_active=eq.true",
+      ]);
+      if (!game) return buildMetadataForPath(pathname);
+
+      let category: {
+        name: string;
+        meta_title: string | null;
+        meta_description: string | null;
+        meta_keywords: string | null;
+        og_image: string | null;
+      } | null = null;
+
+      if (categorySlug) {
+        category = await fetchFromSupabase<{
+          name: string;
+          meta_title: string | null;
+          meta_description: string | null;
+          meta_keywords: string | null;
+          og_image: string | null;
+        }>("categories", "name,meta_title,meta_description,meta_keywords,og_image", [
+          `slug=eq.${encodeURIComponent(categorySlug)}`,
+          `game_id=eq.${game.id}`,
+          "is_active=eq.true",
+        ]);
+      }
+
+      const title = category
+        ? (category.meta_title || `${game.name} - ${category.name} Services | misti.services`)
+        : (game.meta_title || `${game.name} Services | misti.services`);
+      const description = category
+        ? (category.meta_description || `Professional ${category.name} services for ${game.name}. Trusted boost services with fast delivery and safe methods.`)
+        : (game.meta_description || game.description || `Browse all ${game.name} boost services. Professional gaming services with 24/7 support and guaranteed results.`);
+      const keywords = category?.meta_keywords || game.meta_keywords || undefined;
+      const canonical = category ? withCanonical(pathname) : (toAbsoluteUrl(game.canonical_url) || withCanonical(pathname));
+      const image = toAbsoluteUrl(category?.og_image || game.og_image || game.image_url) || DEFAULT_OG_IMAGE;
+
+      const metadata: Metadata = {
+        title,
+        description,
+        keywords,
+        alternates: { canonical },
+        robots: category ? undefined : (game.robots || undefined),
+        openGraph: {
+          type: "website",
+          siteName: SITE_NAME,
+          title,
+          description,
+          url: canonical,
+          images: [{ url: image, width: 1200, height: 630 }],
+        },
+        twitter: {
+          card: "summary_large_image",
+          site: "@mistiservices",
+          title,
+          description,
+          images: [image],
+        },
+      };
+      return metadata;
+    }
+
+    if (resolved.key === "productDetail") {
+      const gameSlug = resolved.params.gameSlug;
+      const categorySlug = resolved.params.categorySlug;
+      const productSlug = resolved.params.productSlug;
+      if (!gameSlug || !categorySlug || !productSlug) return buildMetadataForPath(pathname);
+
+      const game = await fetchFromSupabase<{
+        id: string;
+        name: string;
+        image_url: string | null;
+        og_image: string | null;
+      }>("games", "id,name,image_url,og_image", [
+        `slug=eq.${encodeURIComponent(gameSlug)}`,
+        "is_active=eq.true",
+      ]);
+      if (!game) return buildMetadataForPath(pathname);
+
+      const category = await fetchFromSupabase<{
+        id: string;
+        name: string;
+      }>("categories", "id,name", [
+        `slug=eq.${encodeURIComponent(categorySlug)}`,
+        `game_id=eq.${game.id}`,
+        "is_active=eq.true",
+      ]);
+      if (!category) return buildMetadataForPath(pathname);
+
+      const product = await fetchFromSupabase<{
+        name: string;
+        short_description: string | null;
+        meta_title: string | null;
+        meta_description: string | null;
+        meta_keywords: string | null;
+        og_image: string | null;
+        image_url: string | null;
+        canonical_url: string | null;
+      }>("products", "name,short_description,meta_title,meta_description,meta_keywords,og_image,image_url,canonical_url", [
+        `slug=eq.${encodeURIComponent(productSlug)}`,
+        `category_id=eq.${category.id}`,
+        "is_active=eq.true",
+      ]);
+      if (!product) return buildMetadataForPath(pathname);
+
+      const title = product.meta_title || `${product.name} - ${category.name} | ${game.name} | misti.services`;
+      const description = product.meta_description || product.short_description || `Professional ${product.name} for ${game.name}. Expert players, fast delivery, and safe methods. Trusted gaming boost services.`;
+      const keywords = product.meta_keywords || `${game.name}, ${category.name}, ${product.name}, boost, gaming services`;
+      const canonical = toAbsoluteUrl(product.canonical_url) || withCanonical(pathname);
+      const image = toAbsoluteUrl(product.og_image || product.image_url || game.og_image || game.image_url) || DEFAULT_OG_IMAGE;
+
+      return {
+        title,
+        description,
+        keywords,
+        alternates: { canonical },
+        openGraph: {
+          type: "website",
+          siteName: SITE_NAME,
+          title,
+          description,
+          url: canonical,
+          images: [{ url: image, width: 1200, height: 630 }],
+        },
+        twitter: {
+          card: "summary_large_image",
+          site: "@mistiservices",
+          title,
+          description,
+          images: [image],
+        },
+      };
+    }
+
+    if (resolved.key === "blogPost") {
+      const slug = resolved.params.slug;
+      if (!slug) return buildMetadataForPath(pathname);
+
+      const post = await fetchFromSupabase<{
+        title: string;
+        excerpt: string | null;
+        meta_description: string | null;
+        featured_image: string | null;
+        canonical_url: string | null;
+      }>("blog_posts", "title,excerpt,meta_description,featured_image,canonical_url", [
+        `slug=eq.${encodeURIComponent(slug)}`,
+        "is_published=eq.true",
+      ]);
+      if (!post) return buildMetadataForPath(pathname);
+
+      const title = `${post.title} | misti.services`;
+      const description = post.meta_description || post.excerpt || `Read our article about ${post.title}. Gaming news, guides, and tips from misti.services.`;
+      const canonical = toAbsoluteUrl(post.canonical_url) || withCanonical(pathname);
+      const image = toAbsoluteUrl(post.featured_image) || DEFAULT_OG_IMAGE;
+
+      return {
+        title,
+        description,
+        alternates: { canonical },
+        openGraph: {
+          type: "article",
+          siteName: SITE_NAME,
+          title,
+          description,
+          url: canonical,
+          images: [{ url: image, width: 1200, height: 630 }],
+        },
+        twitter: {
+          card: "summary_large_image",
+          site: "@mistiservices",
+          title,
+          description,
+          images: [image],
+        },
+      };
+    }
+  } catch {
+    // Fallback to deterministic static metadata if async enrichment fails.
+  }
+
+  return buildMetadataForPath(pathname);
 }

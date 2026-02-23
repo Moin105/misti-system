@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import AppShellClient from "@/components/AppShellClient";
 import { resolveRoute } from "@/lib/nextRoutes";
-import { buildMetadataForPath } from "@/lib/seo";
+import { buildMetadataForPathAsync } from "@/lib/seo";
 
 interface CatchAllPageProps {
   params: Promise<{ slug?: string[] }>;
@@ -16,7 +16,7 @@ function normalizePath(slug?: string[]) {
 export async function generateMetadata({ params }: CatchAllPageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const pathname = normalizePath(resolvedParams.slug);
-  return buildMetadataForPath(pathname);
+  return buildMetadataForPathAsync(pathname);
 }
 
 export default async function CatchAllPage({ params }: CatchAllPageProps) {

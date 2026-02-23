@@ -24,7 +24,8 @@ interface ProductInfo {
   game_name: string;
   options_count: number;
   product_type: ProductType;
-  created_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface OptionChoice {
@@ -80,7 +81,7 @@ const BulkProductOptionsManager = () => {
       const { data, error } = await supabase
         .from("products")
         .select(`
-          id, name, slug, category_id, is_slider_product, slider_config, created_at,
+          id, name, slug, category_id, is_slider_product, slider_config, created_at, updated_at,
           categories!inner(name, game_id, games!inner(name)),
           product_options(id)
         `)
@@ -104,6 +105,7 @@ const BulkProductOptionsManager = () => {
           options_count: p.product_options?.length || 0,
           product_type: productType,
           created_at: p.created_at,
+          updated_at: p.updated_at,
         };
       }) as ProductInfo[];
     },
@@ -294,9 +296,15 @@ const BulkProductOptionsManager = () => {
       return matchesSearch && matchesGame && matchesCategory && matchesType;
     })
     .sort((a, b) => {
+      const getSortTimestamp = (product: ProductInfo) => {
+        const primary = product.created_at ? new Date(product.created_at).getTime() : 0;
+        const fallback = product.updated_at ? new Date(product.updated_at).getTime() : 0;
+        return Number.isFinite(primary) && primary > 0 ? primary : fallback;
+      };
+
       switch (sortBy) {
         case "latest":
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return getSortTimestamp(b) - getSortTimestamp(a);
         case "missing_options":
           if (a.options_count === 0 && b.options_count > 0) return -1;
           if (a.options_count > 0 && b.options_count === 0) return 1;
