@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/LazyFooter";
@@ -40,7 +40,8 @@ const WorkWithUs = () => {
   const [loading, setLoading] = useState(false);
   const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [formData, setFormData] = useState({
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const initialFormData = {
     discord_name: "",
     email: "",
     phone_number: "",
@@ -53,7 +54,8 @@ const WorkWithUs = () => {
     marketplace_profiles: "",
     hours_available: "",
     how_found_us: "",
-  });
+  };
+  const [formData, setFormData] = useState(initialFormData);
 
   // Signal to prerender services when page is ready
   useEffect(() => {
@@ -66,6 +68,15 @@ const WorkWithUs = () => {
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: "" }));
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setProofFiles([]);
+    setErrors({});
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,6 +209,7 @@ const WorkWithUs = () => {
       if (error) throw error;
 
       toast.success("Application submitted successfully!");
+      resetForm();
       // Stay on the same page and refresh once to reset state/UI.
       setTimeout(() => navigate(0), 250);
     } catch (error) {
@@ -345,6 +357,7 @@ const WorkWithUs = () => {
                   <Label htmlFor="proof_files">Upload Proofs *</Label>
                   <Input
                     id="proof_files"
+                    ref={fileInputRef}
                     type="file"
                     multiple
                     accept="image/jpeg,image/jpg,image/png,application/pdf"

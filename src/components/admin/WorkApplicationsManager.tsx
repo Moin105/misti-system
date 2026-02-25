@@ -48,7 +48,7 @@ const formatApplicationDate = (app: WorkApplication): string => {
   );
   if (updatedValid && updatedDate) return updatedDate.toLocaleDateString();
 
-  return "-";
+  return new Date().toLocaleDateString();
 };
 
 const WorkApplicationsManager = () => {
@@ -76,10 +76,21 @@ const WorkApplicationsManager = () => {
         return;
       }
       
-      setApplications((data || []).map(app => ({
-        ...app,
-        proof_urls: Array.isArray(app.proof_urls) ? app.proof_urls : []
-      })) as WorkApplication[]);
+      setApplications(
+        (data || []).map((app) => {
+          const normalizedCreatedAt =
+            app.created_at || app.updated_at || new Date().toISOString();
+          const normalizedUpdatedAt =
+            app.updated_at || app.created_at || normalizedCreatedAt;
+
+          return {
+            ...app,
+            created_at: normalizedCreatedAt,
+            updated_at: normalizedUpdatedAt,
+            proof_urls: Array.isArray(app.proof_urls) ? app.proof_urls : [],
+          };
+        }) as WorkApplication[]
+      );
     } catch (error) {
       console.error('Error fetching applications:', error);
       toast.error("Failed to load applications");
