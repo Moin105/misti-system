@@ -17,6 +17,11 @@ interface UserTierInfo {
   spending_to_next_tier: number;
 }
 
+const toSafeNumber = (value: unknown, fallback = 0): number => {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
 // SECURITY FIX: No longer accepts userId prop to prevent IDOR attacks
 // Always uses authenticated user's ID from session
 export const CashbackProgress = () => {
@@ -28,8 +33,11 @@ export const CashbackProgress = () => {
 
   useEffect(() => {
     if (isInitialized && user) {
+      setLoading(true);
       fetchUserTierInfo();
     } else if (isInitialized && !user) {
+      setTierInfo(null);
+      setCashbackBalance(0);
       setLoading(false);
     }
   }, [user, isInitialized]);
@@ -48,7 +56,20 @@ export const CashbackProgress = () => {
       if (tierResult.error) {
         console.error("RPC get_user_tier error:", tierResult.error.message);
       } else if (tierResult.data && Array.isArray(tierResult.data) && tierResult.data.length > 0) {
-        setTierInfo(tierResult.data[0]);
+        const raw = tierResult.data[0] as Partial<UserTierInfo>;
+        setTierInfo({
+          tier_id: String(raw.tier_id || ""),
+          tier_name: String(raw.tier_name || "Bronze"),
+          tier_percentage: toSafeNumber(raw.tier_percentage, 0),
+          min_spending: toSafeNumber(raw.min_spending, 0),
+          current_spending: toSafeNumber(raw.current_spending, 0),
+          next_tier_name: raw.next_tier_name ? String(raw.next_tier_name) : null,
+          next_tier_min_spending:
+            raw.next_tier_min_spending === null || raw.next_tier_min_spending === undefined
+              ? null
+              : toSafeNumber(raw.next_tier_min_spending, 0),
+          spending_to_next_tier: toSafeNumber(raw.spending_to_next_tier, 0),
+        });
       }
 
       // Handle profile data - log errors but don't throw
@@ -81,9 +102,12 @@ export const CashbackProgress = () => {
 
   const progressPercentage =
     tierInfo.next_tier_min_spending
-      ? ((tierInfo.current_spending - tierInfo.min_spending) /
-          (tierInfo.next_tier_min_spending - tierInfo.min_spending)) *
-        100
+      ? (() => {
+          const denominator = tierInfo.next_tier_min_spending - tierInfo.min_spending;
+          if (!Number.isFinite(denominator) || denominator <= 0) return 0;
+          const raw = ((tierInfo.current_spending - tierInfo.min_spending) / denominator) * 100;
+          return Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;
+        })()
       : 100;
 
   return (

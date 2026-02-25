@@ -21,6 +21,11 @@ interface CashbackTier {
   sort_order: number;
 }
 
+const toSafeNumber = (value: unknown, fallback = 0): number => {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
 const tierIcons = [
   { icon: "🥉", color: "from-amber-700 to-amber-600", border: "border-amber-700/50", bg: "bg-amber-900/20" },
   { icon: "🥈", color: "from-gray-400 to-gray-300", border: "border-gray-400/50", bg: "bg-gray-700/20" },
@@ -100,13 +105,17 @@ const Cashback = () => {
       const { data, error } = await supabase.rpc("get_public_cashback_tiers");
 
       if (error) throw error;
-      return (data || []).map((tier: { tier_name: string; min_spending: number; cashback_percentage: number; sort_order: number }, index: number) => ({
-        id: `tier-${index}`,
-        tier_name: tier.tier_name || '',
-        min_spending: tier.min_spending || 0,
-        cashback_percentage: tier.cashback_percentage || 0,
-        sort_order: tier.sort_order || index,
-      })) as CashbackTier[];
+      if (!Array.isArray(data)) return [];
+      return data
+        .filter((tier) => tier && typeof tier === "object")
+        .map((tier: any, index: number) => ({
+          id: `tier-${index}`,
+          tier_name: String(tier.tier_name || "").trim() || `Tier ${index + 1}`,
+          min_spending: toSafeNumber(tier.min_spending, 0),
+          cashback_percentage: toSafeNumber(tier.cashback_percentage, 0),
+          sort_order: toSafeNumber(tier.sort_order, index),
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order) as CashbackTier[];
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -250,7 +259,7 @@ const Cashback = () => {
                     <p className="text-sm text-muted-foreground">Cashback Rate</p>
                     <div className="pt-4 border-t border-border">
                       <p className="text-sm text-muted-foreground">Minimum Spending</p>
-                      <p className="text-lg font-semibold">${tier.min_spending.toLocaleString()}</p>
+                      <p className="text-lg font-semibold">${toSafeNumber(tier.min_spending, 0).toLocaleString()}</p>
                     </div>
                   </CardContent>
                 </Card>
