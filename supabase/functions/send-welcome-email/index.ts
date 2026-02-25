@@ -128,6 +128,22 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
+    if ((emailResponse as any)?.error) {
+      const resendError = (emailResponse as any).error;
+      const message =
+        typeof resendError?.message === "string"
+          ? resendError.message
+          : "Failed to send welcome email";
+      console.error("[WELCOME-EMAIL] Resend API error:", resendError);
+      return new Response(
+        JSON.stringify({ error: message, providerError: resendError }),
+        {
+          status: 502,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     console.log("[WELCOME-EMAIL] Email sent successfully:", emailResponse);
 
     return new Response(JSON.stringify(emailResponse), {

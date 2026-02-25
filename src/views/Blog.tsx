@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen } from "lucide-react";
 import { DynamicIcon } from "@/components/DynamicIcon";
 import { signalPrerenderReady } from "@/lib/prerender";
+import { fixSupabaseUrl } from "@/lib/urlUtils";
 
 interface BlogCategory {
   id: string;
@@ -102,6 +103,7 @@ const Blog = () => {
       const categoryMap = new Map((categoriesRes.data || []).map((cat) => [cat.id, cat]));
       const postsWithCategory = postsRes.data.map((post) => ({
         ...post,
+        featured_image: fixSupabaseUrl(post.featured_image),
         blog_categories: post.category_id ? categoryMap.get(post.category_id) || null : null,
       }));
       setPosts(postsWithCategory);

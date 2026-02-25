@@ -133,11 +133,20 @@ const Auth = () => {
           }
         }
 
+        let welcomeEmailSent = false;
         // Send welcome email via Resend
         try {
-          await supabase.functions.invoke('send-welcome-email', {
+          const { data: welcomeData, error: welcomeError } = await supabase.functions.invoke('send-welcome-email', {
             body: { email, name: fullName }
           });
+          if (welcomeError || (welcomeData as any)?.error) {
+            throw new Error(
+              welcomeError?.message ||
+              (welcomeData as any)?.error ||
+              "Welcome email failed"
+            );
+          }
+          welcomeEmailSent = true;
           console.log("Welcome email sent successfully");
         } catch (emailError) {
           console.error("Failed to send welcome email:", emailError);
@@ -145,7 +154,9 @@ const Auth = () => {
 
         toast({
           title: "Account created!",
-          description: "You have been logged in successfully. Check your email for a welcome message!",
+          description: welcomeEmailSent
+            ? "You have been logged in successfully. Check your email for a welcome message!"
+            : "You have been logged in successfully.",
         });
       }
     } catch (error: any) {

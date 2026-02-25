@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Clock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signalPrerenderReady } from "@/lib/prerender";
+import { fixSupabaseUrl } from "@/lib/urlUtils";
+import { getOptimizedCoverUrl } from "@/lib/imageOptimization";
 
 interface BlogPost {
   id: string;
@@ -67,7 +69,24 @@ const BlogPost = () => {
     }
   }, [loading, post]);
 
+  const checkGoneAndRedirect = async () => {
+    const { data: deleted } = await supabase
+      .from("deleted_urls")
+      .select("id")
+      .eq("url_path", `/blog/${slug}`)
+      .maybeSingle();
+    if (deleted) {
+      navigate("/gone", { replace: true });
+      return true;
+    }
+    return false;
+  };
+
   const fetchPost = async () => {
+    setLoading(true);
+    setPost(null);
+    setIsUnpublishedLegalPage(false);
+
     const { data, error } = await supabase
       .from("blog_posts")
       .select("id, title, slug, content, created_at, is_published, is_legal_page, excerpt, meta_description, meta_keywords, featured_image, author_name, read_time_minutes, canonical_url")
@@ -75,15 +94,27 @@ const BlogPost = () => {
       .maybeSingle();
 
     if (error || !data) {
-      navigate("/404");
-    } else if (!data.is_published && data.is_legal_page) {
-      setIsUnpublishedLegalPage(true);
-      setPost(null);
+      const redirectedToGone = await checkGoneAndRedirect();
+      if (!redirectedToGone) navigate("/404");
     } else if (!data.is_published) {
-      navigate("/404");
+      const redirectedToGone = await checkGoneAndRedirect();
+      if (redirectedToGone) {
+        setLoading(false);
+        return;
+      }
+      if (data.is_legal_page) {
+        setIsUnpublishedLegalPage(true);
+        setPost(null);
+      } else {
+        navigate("/404");
+      }
     } else {
+      const fixedPost = {
+        ...data,
+        featured_image: fixSupabaseUrl(data.featured_image),
+      };
       setIsUnpublishedLegalPage(false);
-      setPost(data);
+      setPost(fixedPost);
     }
     setLoading(false);
   };
@@ -189,6 +220,15 @@ const BlogPost = () => {
                 </div>
               ) : post ? (
                 <>
+                  {post.featured_image && (
+                    <img
+                      src={getOptimizedCoverUrl(post.featured_image, 1400, 700)}
+                      alt={post.title}
+                      className="w-full max-h-[420px] object-cover rounded-xl mb-8 border"
+                      loading="eager"
+                      decoding="async"
+                    />
+                  )}
                   <h1 className="text-5xl font-bold mb-6 leading-tight">
                     {post.title}
                   </h1>

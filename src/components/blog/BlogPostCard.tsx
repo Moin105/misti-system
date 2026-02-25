@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { fixSupabaseUrl } from "@/lib/urlUtils";
+import { getOptimizedCoverUrl } from "@/lib/imageOptimization";
 
 interface Category {
   id?: string;
@@ -33,14 +35,16 @@ const BlogPostCard = ({
   read_time_minutes,
   category 
 }: BlogPostCardProps) => {
+  const imageUrl = fixSupabaseUrl(featured_image);
+
   return (
     <Link to={`/blog/${slug}`} className="group">
       <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-primary/50 hover:-translate-y-1">
-        {featured_image && (
+        {imageUrl && (
           <div className="relative overflow-hidden bg-muted">
             <AspectRatio ratio={16 / 9}>
               <img 
-                src={featured_image} 
+                src={getOptimizedCoverUrl(imageUrl, 900, 506)}
                 alt={title}
                 className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
               />
