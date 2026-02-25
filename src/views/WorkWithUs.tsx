@@ -172,6 +172,7 @@ const WorkWithUs = () => {
       }
 
       const proofUrls = await uploadProofs();
+      const nowIso = new Date().toISOString();
 
       const { error } = await supabase
         .from('work_applications')
@@ -189,12 +190,15 @@ const WorkWithUs = () => {
           hours_available: result.data.hours_available,
           how_found_us: result.data.how_found_us,
           proof_urls: proofUrls.length > 0 ? proofUrls : null,
+          created_at: nowIso,
+          updated_at: nowIso,
         });
 
       if (error) throw error;
 
       toast.success("Application submitted successfully!");
-      navigate("/");
+      // Stay on the same page and refresh once to reset state/UI.
+      setTimeout(() => navigate(0), 250);
     } catch (error) {
       console.error('Error submitting application:', error);
       toast.error("Failed to submit application. Please try again.");

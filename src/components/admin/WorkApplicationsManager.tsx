@@ -27,8 +27,29 @@ interface WorkApplication {
   how_found_us: string;
   status: string;
   notes: string | null;
-  created_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
+
+const formatApplicationDate = (app: WorkApplication): string => {
+  const createdDate = app.created_at ? new Date(app.created_at) : null;
+  const createdValid = Boolean(
+    createdDate &&
+      Number.isFinite(createdDate.getTime()) &&
+      createdDate.getUTCFullYear() > 1971
+  );
+  if (createdValid && createdDate) return createdDate.toLocaleDateString();
+
+  const updatedDate = app.updated_at ? new Date(app.updated_at) : null;
+  const updatedValid = Boolean(
+    updatedDate &&
+      Number.isFinite(updatedDate.getTime()) &&
+      updatedDate.getUTCFullYear() > 1971
+  );
+  if (updatedValid && updatedDate) return updatedDate.toLocaleDateString();
+
+  return "-";
+};
 
 const WorkApplicationsManager = () => {
   const [applications, setApplications] = useState<WorkApplication[]>([]);
@@ -155,7 +176,7 @@ const WorkApplicationsManager = () => {
                 <TableCell>{app.country}</TableCell>
                 <TableCell className="capitalize">{app.booster_type}</TableCell>
                 <TableCell className={getStatusColor(app.status)}>{app.status}</TableCell>
-                <TableCell>{new Date(app.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>{formatApplicationDate(app)}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <Button
