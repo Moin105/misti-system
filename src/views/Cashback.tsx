@@ -380,28 +380,23 @@ const Cashback = () => {
         </div>
       </section>
 
-      {/* User Progress Section (Only for logged in users) */}
-      {isInitialized && user && (
-        <>
-          {/* Separator */}
-          <div className="relative h-12 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent" />
-            <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-purple-500 to-blue-500" />
-          </div>
+      {/* User Progress Section */}
+      <div className="relative h-12 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent" />
+        <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-purple-500 to-blue-500" />
+      </div>
 
-          <section className="py-16 container mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                Your Progress
-              </h2>
-              <p className="text-muted-foreground">Track your tier status and cashback balance</p>
-            </div>
-            <div className="max-w-4xl mx-auto">
-              <CashbackProgress />
-            </div>
-          </section>
-        </>
-      )}
+      <section className="py-16 container mx-auto px-4">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+            Your Progress
+          </h2>
+          <p className="text-muted-foreground">Track your tier status and cashback balance</p>
+        </div>
+        <div className="max-w-4xl mx-auto">
+          <CashbackProgress />
+        </div>
+      </section>
 
       {/* Separator */}
       <div className="relative h-12 overflow-hidden">

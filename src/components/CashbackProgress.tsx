@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { Trophy, TrendingUp, DollarSign } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 interface UserTierInfo {
   tier_id: string;
@@ -96,8 +98,27 @@ export const CashbackProgress = () => {
     );
   }
 
-  if (!user || !tierInfo) {
-    return null;
+  if (!user) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-sm text-muted-foreground mb-3">
+          Sign in to see your personalized cashback rank, spending progress, and balance.
+        </p>
+        <Link to="/auth">
+          <Button size="sm">Sign In</Button>
+        </Link>
+      </Card>
+    );
+  }
+
+  if (!tierInfo) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          We are preparing your cashback progress. Please refresh in a moment.
+        </p>
+      </Card>
+    );
   }
 
   const progressPercentage =
