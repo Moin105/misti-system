@@ -37,6 +37,8 @@ const PaymentSuccess = () => {
     if (orderId && sessionStorage.getItem(verificationKey)) {
       console.log("[PaymentSuccess] Order already verified in this session, skipping");
       setVerified(true);
+      // Ensure cart is empty even when skipping duplicate verification attempts.
+      await clearCart();
       setVerifying(false);
       return;
     }
@@ -67,10 +69,11 @@ const PaymentSuccess = () => {
           sessionStorage.setItem(`payment_verified_${orderId}`, 'true');
         }
         
-        // Clear the cart after successful payment (only if not already processed)
+        // Always clear cart after confirmed paid status.
+        // `alreadyProcessed` only means server-side post-payment handlers were already run.
+        await clearCart();
+
         if (!data.alreadyProcessed) {
-          await clearCart();
-          
           toast({
             title: "Payment successful!",
             description: "Your order has been confirmed.",

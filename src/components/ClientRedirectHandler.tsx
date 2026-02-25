@@ -21,6 +21,7 @@ const SKIP_REDIRECT_PREFIXES = [
 
 const SKIP_EXACT_ROUTES = new Set([
   "/",
+  "/cashback",
   "/payment-success",
   "/orders",
   "/sitemap-generator",
