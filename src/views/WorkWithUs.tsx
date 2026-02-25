@@ -189,6 +189,7 @@ const WorkWithUs = () => {
           marketplace_profiles: result.data.marketplace_profiles || null,
           hours_available: result.data.hours_available,
           how_found_us: result.data.how_found_us,
+          status: "pending",
           proof_urls: proofUrls.length > 0 ? proofUrls : null,
           created_at: nowIso,
           updated_at: nowIso,

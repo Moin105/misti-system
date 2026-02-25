@@ -1,6 +1,11 @@
 -- Ensure work applications always get valid timestamps and repair legacy bad values.
 
 UPDATE public.work_applications
+SET status = 'pending'
+WHERE status IS NULL
+   OR btrim(status) = '';
+
+UPDATE public.work_applications
 SET created_at = COALESCE(updated_at, now())
 WHERE created_at IS NULL
    OR created_at < '1972-01-01'::timestamptz;
@@ -13,5 +18,7 @@ WHERE updated_at IS NULL
 ALTER TABLE public.work_applications
   ALTER COLUMN created_at SET DEFAULT now(),
   ALTER COLUMN updated_at SET DEFAULT now(),
+  ALTER COLUMN status SET DEFAULT 'pending',
   ALTER COLUMN created_at SET NOT NULL,
-  ALTER COLUMN updated_at SET NOT NULL;
+  ALTER COLUMN updated_at SET NOT NULL,
+  ALTER COLUMN status SET NOT NULL;
