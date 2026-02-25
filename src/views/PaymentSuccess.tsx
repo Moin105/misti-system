@@ -26,25 +26,29 @@ const PaymentSuccess = () => {
   const orderId = searchParams.get("order_id");
 
   useEffect(() => {
-    // Guard against duplicate verification attempts
-    if (verificationAttempted.current) {
-      return;
-    }
-    
-    const verificationKey = `payment_verified_${orderId}`;
-    
-    // Check if already verified in this browser session
-    if (orderId && sessionStorage.getItem(verificationKey)) {
-      console.log("[PaymentSuccess] Order already verified in this session, skipping");
-      setVerified(true);
-      // Ensure cart is empty even when skipping duplicate verification attempts.
-      await clearCart();
-      setVerifying(false);
-      return;
-    }
-    
-    verificationAttempted.current = true;
-    verifyPayment();
+    const runVerification = async () => {
+      // Guard against duplicate verification attempts
+      if (verificationAttempted.current) {
+        return;
+      }
+
+      const verificationKey = `payment_verified_${orderId}`;
+
+      // Check if already verified in this browser session
+      if (orderId && sessionStorage.getItem(verificationKey)) {
+        console.log("[PaymentSuccess] Order already verified in this session, skipping");
+        setVerified(true);
+        // Ensure cart is empty even when skipping duplicate verification attempts.
+        await clearCart();
+        setVerifying(false);
+        return;
+      }
+
+      verificationAttempted.current = true;
+      await verifyPayment();
+    };
+
+    runVerification();
   }, [orderId]);
 
   const verifyPayment = async () => {

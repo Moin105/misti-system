@@ -146,12 +146,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     let isAdmin = false;
     if (user) {
-      const { data: userRoles, error: roleError } = await supabaseAdmin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+    const { data: userRoles, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
       isAdmin = !roleError && userRoles !== null;
     }
 
@@ -692,10 +692,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Admin email sent:", adminEmailResult);
 
     return jsonResponse({
-      success: true,
+        success: true,
       requestId,
-      customerEmail,
-      adminEmail: adminEmailResult,
+        customerEmail,
+        adminEmail: adminEmailResult,
     });
   } catch (error: any) {
     if (error instanceof HttpError) {
