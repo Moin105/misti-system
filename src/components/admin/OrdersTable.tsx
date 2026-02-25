@@ -42,6 +42,13 @@ interface OrdersTableProps {
   onStatusUpdate: (orderId: string, status: "pending" | "processing" | "completed" | "cancelled") => void;
 }
 
+const parseValidDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  const valid = Number.isFinite(date.getTime()) && date.getUTCFullYear() > 1971;
+  return valid ? date : null;
+};
+
 export const OrdersTable = ({ orders, onViewOrder, onStatusUpdate }: OrdersTableProps) => {
   const { formatPrice } = useCurrency();
   const { toast } = useToast();
@@ -236,9 +243,11 @@ export const OrdersTable = ({ orders, onViewOrder, onStatusUpdate }: OrdersTable
                 <TableCell>
                   <div className="text-sm">
                     <p className="text-muted-foreground">
-                      {formatDistanceToNow(new Date(order.created_at), {
-                        addSuffix: true,
-                      })}
+                      {(() => {
+                        const date = parseValidDate(order.created_at) ?? parseValidDate(order.updated_at);
+                        if (!date) return "Unknown date";
+                        return formatDistanceToNow(date, { addSuffix: true });
+                      })()}
                     </p>
                   </div>
                 </TableCell>

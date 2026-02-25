@@ -36,6 +36,13 @@ interface Order {
   coupon?: { id: string; code: string; discount_percentage: number } | null;
 }
 
+const parseValidDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  const valid = Number.isFinite(date.getTime()) && date.getUTCFullYear() > 1971;
+  return valid ? date : null;
+};
+
 const OrdersManager = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +69,18 @@ const OrdersManager = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders(
+        (data || []).map((order: any) => {
+          const fallbackIso = new Date().toISOString();
+          const createdAt = order.created_at || order.updated_at || fallbackIso;
+          const updatedAt = order.updated_at || order.created_at || fallbackIso;
+          return {
+            ...order,
+            created_at: createdAt,
+            updated_at: updatedAt,
+          };
+        })
+      );
     } catch (error: any) {
       toast({
         title: "Error",
@@ -149,7 +167,10 @@ const OrdersManager = () => {
       order.cashback_earned || 0,
       order.referral_discount || 0,
       order.status,
-      new Date(order.created_at).toLocaleDateString(),
+      (() => {
+        const date = parseValidDate(order.created_at) || parseValidDate(order.updated_at);
+        return date ? date.toLocaleDateString() : "-";
+      })(),
     ]);
 
     const csvContent = [headers, ...rows]

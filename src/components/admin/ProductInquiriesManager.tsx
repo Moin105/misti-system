@@ -18,8 +18,20 @@ interface ProductInquiry {
   product_name: string | null;
   message: string;
   status: string;
-  created_at: string;
+  created_at: string | null;
+  updated_at?: string | null;
 }
+
+const formatInquiryDate = (inquiry: ProductInquiry, pattern: "table" | "details" = "table") => {
+  const rawDate = inquiry.created_at || inquiry.updated_at;
+  if (!rawDate) return "-";
+  const parsed = new Date(rawDate);
+  const valid = Number.isFinite(parsed.getTime()) && parsed.getUTCFullYear() > 1971;
+  if (!valid) return "-";
+  return pattern === "details"
+    ? format(parsed, "MMMM dd, yyyy 'at' HH:mm")
+    : format(parsed, "MMM dd, yyyy HH:mm");
+};
 
 export const ProductInquiriesManager = () => {
   const [inquiries, setInquiries] = useState<ProductInquiry[]>([]);
@@ -39,7 +51,14 @@ export const ProductInquiriesManager = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setInquiries(data || []);
+      setInquiries(
+        (data || []).map((inquiry: any) => ({
+          ...inquiry,
+          status: inquiry.status || "pending",
+          created_at: inquiry.created_at || inquiry.updated_at || null,
+          updated_at: inquiry.updated_at || inquiry.created_at || null,
+        }))
+      );
     } catch (error: any) {
       toast({
         title: "Error",
@@ -123,7 +142,7 @@ export const ProductInquiriesManager = () => {
             {inquiries.map((inquiry) => (
               <TableRow key={inquiry.id}>
                 <TableCell>
-                  {format(new Date(inquiry.created_at), "MMM dd, yyyy HH:mm")}
+                  {formatInquiryDate(inquiry, "table")}
                 </TableCell>
                 <TableCell>{inquiry.customer_name}</TableCell>
                 <TableCell>{inquiry.customer_email}</TableCell>
@@ -198,7 +217,7 @@ export const ProductInquiriesManager = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Submitted</p>
-                <p>{format(new Date(selectedInquiry.created_at), "MMMM dd, yyyy 'at' HH:mm")}</p>
+                <p>{formatInquiryDate(selectedInquiry, "details")}</p>
               </div>
             </div>
           )}

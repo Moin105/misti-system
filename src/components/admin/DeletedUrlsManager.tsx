@@ -18,7 +18,7 @@ interface DeletedUrl {
   content_type: string;
   content_id: string | null;
   original_title: string | null;
-  deleted_at: string;
+  deleted_at: string | null;
   created_at: string | null;
   deleted_by: string | null;
 }
@@ -51,7 +51,18 @@ const DeletedUrlsManager = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setDeletedUrls(data || []);
+      setDeletedUrls(
+        (data || []).map((url: any) => {
+          const fallbackIso = new Date().toISOString();
+          const deletedAt = url.deleted_at || url.created_at || fallbackIso;
+          const createdAt = url.created_at || url.deleted_at || fallbackIso;
+          return {
+            ...url,
+            deleted_at: deletedAt,
+            created_at: createdAt,
+          };
+        })
+      );
     } catch (error: any) {
       console.error('Error fetching deleted URLs:', error);
       toast({
@@ -168,12 +179,15 @@ const DeletedUrlsManager = () => {
     }
 
     try {
+      const nowIso = new Date().toISOString();
       const { error } = await supabase
         .from('deleted_urls')
         .insert({
           url_path: newUrl.url_path,
           content_type: newUrl.content_type,
           original_title: newUrl.original_title || null,
+          deleted_at: nowIso,
+          created_at: nowIso,
         });
 
       if (error) throw error;
@@ -213,9 +227,11 @@ const DeletedUrlsManager = () => {
   };
 
   const getDisplayDeletedDate = (url: DeletedUrl) => {
-    const deletedDate = new Date(url.deleted_at);
-    const deletedDateValid = Number.isFinite(deletedDate.getTime()) && deletedDate.getUTCFullYear() > 1971;
-    if (deletedDateValid) return deletedDate.toLocaleDateString();
+    const deletedDate = url.deleted_at ? new Date(url.deleted_at) : null;
+    const deletedDateValid = Boolean(
+      deletedDate && Number.isFinite(deletedDate.getTime()) && deletedDate.getUTCFullYear() > 1971,
+    );
+    if (deletedDateValid && deletedDate) return deletedDate.toLocaleDateString();
 
     const createdDate = url.created_at ? new Date(url.created_at) : null;
     const createdDateValid = Boolean(
@@ -223,7 +239,7 @@ const DeletedUrlsManager = () => {
     );
     if (createdDateValid && createdDate) return createdDate.toLocaleDateString();
 
-    return "-";
+    return new Date().toLocaleDateString();
   };
 
   const stats = {

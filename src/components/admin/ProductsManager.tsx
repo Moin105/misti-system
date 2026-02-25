@@ -629,6 +629,8 @@ const ProductsManager = () => {
             content_type: "product",
             content_id: id,
             original_title: product?.name ?? null,
+            deleted_at: nowIso,
+            created_at: nowIso,
           },
           { onConflict: "url_path" },
         );

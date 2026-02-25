@@ -29,6 +29,13 @@ interface OrderWithCoupon {
   coupon: { code: string; discount_percentage: number } | null;
 }
 
+const parseValidDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  const valid = Number.isFinite(date.getTime()) && date.getUTCFullYear() > 1971;
+  return valid ? date : null;
+};
+
 const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<OrderWithCoupon[]>([]);
@@ -66,7 +73,15 @@ const Orders = () => {
       .order("created_at", { ascending: false });
 
     if (!ordersError && ordersData) {
-      setOrders(ordersData as OrderWithCoupon[]);
+      setOrders(
+        (ordersData as OrderWithCoupon[]).map((order) => {
+          const fallbackIso = new Date().toISOString();
+          return {
+            ...order,
+            created_at: order.created_at || fallbackIso,
+          };
+        })
+      );
     }
 
     // Fetch user tier info
@@ -192,7 +207,11 @@ const Orders = () => {
                           <div>
                             <p className="font-bold text-lg">{order.order_number}</p>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString()}
+                              {(() => {
+                                const parsed = parseValidDate(order.created_at);
+                                if (!parsed) return "Unknown date";
+                                return `${parsed.toLocaleDateString()} at ${parsed.toLocaleTimeString()}`;
+                              })()}
                             </p>
                           </div>
                           <p className="font-bold text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{formatPrice(order.total_amount)}</p>

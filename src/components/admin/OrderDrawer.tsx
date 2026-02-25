@@ -74,6 +74,13 @@ interface OrderDrawerProps {
   onDelete: () => void;
 }
 
+const parseValidDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  const valid = Number.isFinite(date.getTime()) && date.getUTCFullYear() > 1971;
+  return valid ? date : null;
+};
+
 export const OrderDrawer = ({
   order,
   open,
@@ -162,6 +169,8 @@ export const OrderDrawer = ({
 
   const statusConfig = getStatusConfig(order.status);
   const StatusIcon = statusConfig.icon;
+  const createdAt = parseValidDate(order.created_at) ?? parseValidDate(order.updated_at);
+  const updatedAt = parseValidDate(order.updated_at);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -224,7 +233,7 @@ export const OrderDrawer = ({
                   </Button>
                 </SheetTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                  {createdAt ? formatDistanceToNow(createdAt, { addSuffix: true }) : "Unknown date"}
                 </p>
               </div>
               <Badge
@@ -484,17 +493,17 @@ export const OrderDrawer = ({
                     <div>
                       <p className="font-medium">Order Created</p>
                       <p className="text-muted-foreground">
-                        {format(new Date(order.created_at), "PPpp")}
+                        {createdAt ? format(createdAt, "PPpp") : "-"}
                       </p>
                     </div>
                   </div>
-                  {order.updated_at !== order.created_at && (
+                  {updatedAt && createdAt && updatedAt.getTime() !== createdAt.getTime() && (
                     <div className="flex items-start gap-3 text-sm">
                       <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
                       <div>
                         <p className="font-medium">Last Updated</p>
                         <p className="text-muted-foreground">
-                          {format(new Date(order.updated_at), "PPpp")}
+                          {format(updatedAt, "PPpp")}
                         </p>
                       </div>
                     </div>

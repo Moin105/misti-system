@@ -89,6 +89,7 @@ export const ContactSupportDropdown = ({
       });
 
       const { data: { user } } = await supabase.auth.getUser();
+      const nowIso = new Date().toISOString();
 
       const { error: dbError } = await supabase
         .from("product_inquiries")
@@ -99,6 +100,9 @@ export const ContactSupportDropdown = ({
           customer_email: validatedData.email,
           product_name: productName || null,
           message: validatedData.message,
+          status: "pending",
+          created_at: nowIso,
+          updated_at: nowIso,
         }]);
       if (dbError) {
         // Do not block support contact if inquiry logging fails.

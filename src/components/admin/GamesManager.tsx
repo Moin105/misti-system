@@ -418,6 +418,8 @@ const GamesManager = () => {
             content_type: "game",
             content_id: id,
             original_title: game?.name ?? null,
+            deleted_at: nowIso,
+            created_at: nowIso,
           },
           { onConflict: "url_path" },
         );

@@ -275,6 +275,8 @@ const BlogManager = () => {
             content_type: "blog_post",
             content_id: id,
             original_title: post?.title ?? null,
+            deleted_at: nowIso,
+            created_at: nowIso,
           },
           { onConflict: "url_path" },
         );

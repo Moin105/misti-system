@@ -281,6 +281,8 @@ const CategoriesManager = () => {
             content_type: "category",
             content_id: id,
             original_title: category?.name ?? null,
+            deleted_at: nowIso,
+            created_at: nowIso,
           },
           { onConflict: "url_path" },
         );

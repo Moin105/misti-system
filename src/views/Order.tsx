@@ -29,6 +29,13 @@ interface Order {
   order_items: OrderItem[];
 }
 
+const parseValidDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  const valid = Number.isFinite(date.getTime()) && date.getUTCFullYear() > 1971;
+  return valid ? date : null;
+};
+
 const Order = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
@@ -97,6 +104,7 @@ const Order = () => {
     completed: "bg-green-500/10 text-green-500 border-green-500/20",
     cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
   }[order.status] || "bg-gray-500/10 text-gray-500 border-gray-500/20";
+  const orderCreatedAt = parseValidDate(order.created_at);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -117,7 +125,7 @@ const Order = () => {
                 <div>
                   <h2 className="text-2xl font-bold mb-1">Order #{order.order_number}</h2>
                   <p className="text-sm text-muted-foreground">
-                    Placed on {new Date(order.created_at).toLocaleDateString()}
+                    Placed on {orderCreatedAt ? orderCreatedAt.toLocaleDateString() : "Unknown date"}
                   </p>
                 </div>
                 <Badge className={statusColor}>{order.status}</Badge>
